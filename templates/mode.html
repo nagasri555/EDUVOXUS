@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EduVoxus | Choose Mode</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body class="about-bg">
+
+<!-- 🔹 Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4">
+    <a class="navbar-brand fw-bold fs-4" href="/">EduVoxus</a>
+
+    <div class="ms-auto">
+        <a class="nav-link d-inline mx-4" href="/">Home</a>
+        <a class="nav-link d-inline mx-4 text-white" href="/about">About</a>
+        <a class="nav-link d-inline mx-4 text-white" href="/dashboard">Dashboard</a>
+        <a class="nav-link d-inline mx-4 text-white" href="/contact">Contact</a>
+
+    </div>
+
+</nav>
+
+<div class="container text-center mt-5">
+    <h2 class="fw-bold mb-2">How do you want to learn?</h2>
+    <p class="text-muted mb-5">Choose your preferred learning mode</p>
+
+    <div class="row justify-content-center g-4">
+
+        <div class="col-md-4">
+            <div class="card p-4 shadow-lg">
+                <div class="fs-1">📘</div>
+                <h4>Quiz</h4>
+                <p class="text-muted">MCQ based assessment</p>
+                <a href="/start?mode=quiz" class="btn btn-primary">Start Quiz</a>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card p-4 shadow-lg">
+                <div class="fs-1">🎤</div>
+                <h4>Voice Practice</h4>
+                <p class="text-muted">Speak & practice concepts</p>
+                <a href="/start?mode=voice" class="btn btn-success">Start Voice</a>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card p-4 shadow-lg">
+                <div class="fs-1">📘</div>
+                <h4>Theory Questions</h4>
+                <p class="text-muted">Conceptual & descriptive learning</p>
+                <a href="/start?mode=theory" class="btn btn-primary">
+                    Start Theory Questions
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
