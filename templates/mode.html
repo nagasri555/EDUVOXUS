@@ -2,64 +2,95 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduVoxus | Choose Mode</title>
+    
+    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
+    
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
 <body class="about-bg">
+    <!-- Background glowing orbs (same as index/about) -->
+    <div class="glow-orb orb1"></div>
+    <div class="glow-orb orb2"></div>
 
-<!-- 🔹 Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4">
-    <a class="navbar-brand fw-bold fs-4" href="/">EduVoxus</a>
+    <!-- NAVBAR (Same as index/about/dashboard) -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <a class="navbar-brand fw-bold fs-4" href="/">EduVoxus</a>
 
-    <div class="ms-auto">
-        <a class="nav-link d-inline mx-4" href="/">Home</a>
-        <a class="nav-link d-inline mx-4 text-white" href="/about">About</a>
-        <a class="nav-link d-inline mx-4 text-white" href="/dashboard">Dashboard</a>
-        <a class="nav-link d-inline mx-4 text-white" href="/contact">Contact</a>
+        <div class="ms-auto">
+            <a class="nav-link d-inline mx-3" href="/">Home</a>
+            <a class="nav-link d-inline mx-3" href="/about">About</a>
+            <a class="nav-link d-inline mx-3" href="/dashboard">Dashboard</a>
+            <a class="nav-link d-inline mx-3" href="/contact">Contact</a>
+        </div>
+    </nav>
 
+    <!-- Mode Selection Section -->
+    <div class="mode-wrapper">
+        <div class="mode-container">
+            <h1 class="mode-title">How do you want to learn?</h1>
+            <p class="mode-subtitle">Choose your preferred learning mode and start your journey</p>
+
+            <div class="mode-grid">
+                <!-- Quiz Mode Card -->
+                <div class="mode-card">
+                    <div class="mode-icon">
+                        <i class="fas fa-puzzle-piece"></i>
+                    </div>
+                    <h3 class="mode-card-title">Quiz Mode</h3>
+                    <p class="mode-description">
+                        Test your knowledge with interactive multiple-choice questions. 
+                        Get instant feedback and track your progress.
+                    </p>
+                    <a href="/start?mode=quiz" class="mode-btn">
+                        <i class="fas fa-play me-2"></i>Start Quiz
+                    </a>
+                </div>
+
+                <!-- Voice Practice Mode Card -->
+                <div class="mode-card">
+                    <div class="mode-icon">
+                        <i class="fas fa-microphone-alt"></i>
+                    </div>
+                    <h3 class="mode-card-title">Voice Practice</h3>
+                    <p class="mode-description">
+                    Speak and practice concepts naturally. Improve your speaking 
+                        confidence with AI-powered voice recognition.
+                    </p>
+                    <a href="/start?mode=voice" class="mode-btn">
+                        <i class="fas fa-microphone me-2"></i>Start Voice
+                    </a>
+                </div>
+
+                <!-- Theory Questions Mode Card -->
+                <div class="mode-card">
+                    <div class="mode-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <h3 class="mode-card-title">Theory Questions</h3>
+                    <p class="mode-description">
+                        Deep dive into conceptual learning with descriptive questions. 
+                        Perfect for understanding complex topics.
+                    </p>
+                    <a href="/start?mode=theory" class="mode-btn">
+                        <i class="fas fa-pen me-2"></i>Start Theory
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 
-</nav>
-
-<div class="container text-center mt-5">
-    <h2 class="fw-bold mb-2">How do you want to learn?</h2>
-    <p class="text-muted mb-5">Choose your preferred learning mode</p>
-
-    <div class="row justify-content-center g-4">
-
-        <div class="col-md-4">
-            <div class="card p-4 shadow-lg">
-                <div class="fs-1">📘</div>
-                <h4>Quiz</h4>
-                <p class="text-muted">MCQ based assessment</p>
-                <a href="/start?mode=quiz" class="btn btn-primary">Start Quiz</a>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card p-4 shadow-lg">
-                <div class="fs-1">🎤</div>
-                <h4>Voice Practice</h4>
-                <p class="text-muted">Speak & practice concepts</p>
-                <a href="/start?mode=voice" class="btn btn-success">Start Voice</a>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card p-4 shadow-lg">
-                <div class="fs-1">📘</div>
-                <h4>Theory Questions</h4>
-                <p class="text-muted">Conceptual & descriptive learning</p>
-                <a href="/start?mode=theory" class="btn btn-primary">
-                    Start Theory Questions
-                </a>
-            </div>
-        </div>
-
-    </div>
-</div>
-
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

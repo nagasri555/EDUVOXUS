@@ -1,107 +1,165 @@
-this is the start.html <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduVoxus | Start Learning</title>
+    
+    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
+    
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
 <body class="about-bg">
+    <!-- Background glowing orbs (same as other pages) -->
+    <div class="glow-orb orb1"></div>
+    <div class="glow-orb orb2"></div>
 
-<!-- 🔹 Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4">
-    <a class="navbar-brand fw-bold fs-4" href="/">EduVoxus</a>
+    <!-- NAVBAR (Same as all pages) -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <a class="navbar-brand fw-bold fs-4" href="/">EduVoxus</a>
 
-    <div class="ms-auto">
-        <a class="nav-link d-inline mx-4" href="/">Home</a>
-        <a class="nav-link d-inline mx-4" href="/about">About</a>
-        <a class="nav-link d-inline mx-4" href="/dashboard">Dashboard</a>
-        <a class="nav-link d-inline mx-4" href="/contact">Contact</a>
-    </div>
-</nav>
+        <div class="ms-auto">
+            <a class="nav-link d-inline mx-3" href="/">Home</a>
+            <a class="nav-link d-inline mx-3" href="/about">About</a>
+            <a class="nav-link d-inline mx-3" href="/dashboard">Dashboard</a>
+            <a class="nav-link d-inline mx-3" href="/contact">Contact</a>
+        </div>
+    </nav>
 
-<div class="container mt-5">
-
-    <div class="text-center mb-4">
-        <h2>Start Practice</h2>
-        <p class="text-muted">
-            {% if mode == "quiz" %} Quiz Mode
-            {% elif mode == "voice" %} Voice Practice Mode
-            {% elif mode == "theory" %} Theory Questions Mode
-            {% endif %}
-        </p>
-    </div>
-
-    <div class="card p-4 mx-auto shadow" style="max-width: 500px;">
-
-        <form method="get"
-            action="{{ '/quiz' if mode == 'quiz'
-                      else '/voice' if mode == 'voice'
-                      else '/theory' }}">
-
-            <!-- Topic -->
-            <div class="mb-3">
-                <label class="form-label">Enter Topic</label>
-                <input type="text" name="topic" class="form-control"
-                       placeholder="e.g. DBMS, OS, Python" required>
-            </div>
-
-            <!-- Quiz Mode -->
-            {% if mode == "quiz" %}
-            <div class="mb-3">
-                <label class="form-label">Number of MCQs</label>
-                <select class="form-select" name="mcqs">
-                    <option>3</option>
-                    <option selected>5</option>
-                    <option>10</option>
-                </select>
-            </div>
-            {% endif %}
-
-            <!-- Theory Mode -->
-            {% if mode == "theory" %}
-            <div class="mb-3">
-                <label class="form-label">Number of Theory Questions</label>
-                <select class="form-select" name="count">
-                    <option>3</option>
-                    <option selected>5</option>
-                    <option>10</option>
-                </select>
-            </div>
-            {% endif %}
-
-            <!-- Voice Mode -->
-            {% if mode == "voice" %}
-            <div class="mb-3">
-                <label class="form-label">Number of Voice Questions</label>
-                <select class="form-select" name="count">
-                    <option value="1">1 Question</option>
-                    <option value="3" selected>3 Questions</option>
-                    <option value="5">5 Questions</option>
-                </select>
-            </div>
-
-            <!-- 🔥 NEW: Difficulty Dropdown -->
-            <div class="mb-3">
-                <label class="form-label">Difficulty Level</label>
-                <select class="form-select" name="difficulty">
-                    <option value="easy">Easy</option>
-                    <option value="medium" selected>Medium</option>
-                    <option value="hard">Hard</option>
-                </select>
-            </div>
-            {% endif %}
-
+    <!-- Start Page Content -->
+    <div class="start-wrapper">
+        <div class="start-container">
+            
+            <!-- Mode Badge -->
             <div class="text-center">
-                <button class="btn btn-success px-4">Continue</button>
+                <div class="mode-badge 
+                    {% if mode == 'quiz' %}quiz
+                    {% elif mode == 'voice' %}voice
+                    {% elif mode == 'theory' %}theory
+                    {% endif %}">
+                    <i class="
+                        {% if mode == 'quiz' %}fas fa-puzzle-piece
+                        {% elif mode == 'voice' %}fas fa-microphone-alt
+                        {% elif mode == 'theory' %}fas fa-book-open
+                        {% endif %}">
+                    </i>
+                    {% if mode == "quiz" %} Quiz Mode
+                    {% elif mode == "voice" %} Voice Practice
+                    {% elif mode == "theory" %} Theory Questions
+                    {% endif %}
+                </div>
             </div>
 
-        </form>
+            <!-- Start Card -->
+            <div class="start-card 
+                {% if mode == 'quiz' %}quiz-mode
+                {% elif mode == 'voice' %}voice-mode
+                {% elif mode == 'theory' %}theory-mode
+                {% endif %}">
+                
+                <h2 class="start-title">Start Your Practice</h2>
+                <p class="start-subtitle">Configure your learning session below</p>
 
+                <form method="get"
+                    action="{{ '/quiz' if mode == 'quiz'
+                              else '/voice' if mode == 'voice'
+                              else '/theory' }}"
+                    class="start-form">
+
+                    <!-- Topic Field -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-tag"></i> Enter Topic
+                        </label>
+                        <input type="text" 
+                               name="topic" 
+                               class="form-control"
+                               placeholder="e.g. DBMS, OS, Python" 
+                               required>
+                    </div>
+
+                    <!-- Quiz Mode -->
+                    {% if mode == "quiz" %}
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-list"></i> Number of MCQs
+                        </label>
+                        <select class="form-select" name="mcqs">
+                            <option value="3">3 Questions</option>
+                            <option value="5" selected>5 Questions</option>
+                            <option value="10">10 Questions</option>
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <!-- Theory Mode -->
+                    {% if mode == "theory" %}
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-pen"></i> Number of Theory Questions
+                        </label>
+                        <select class="form-select" name="count">
+                            <option value="3">3 Questions</option>
+                            <option value="5" selected>5 Questions</option>
+                            <option value="10">10 Questions</option>
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <!-- Voice Mode -->
+                    {% if mode == "voice" %}
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-microphone"></i> Number of Voice Questions
+                        </label>
+                        <select class="form-select" name="count">
+                            <option value="1">1 Question</option>
+                            <option value="3" selected>3 Questions</option>
+                            <option value="5">5 Questions</option>
+                        </select>
+                    </div>
+
+                    <!-- Difficulty Dropdown -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-signal"></i> Difficulty Level
+                        </label>
+                        <select class="form-select" name="difficulty">
+                            <option value="easy">Easy</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <!-- Continue Button -->
+                    <div class="text-center">
+                        <button class="continue-btn">
+                            Start Learning <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Back Link -->
+                <div class="text-center">
+                    <a href="/mode" class="back-link">
+                        <i class="fas fa-arrow-left"></i> Back to Modes
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 
-</div>
-
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
