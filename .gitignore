@@ -4,3 +4,10 @@ __pycache__/
 instance/
 *.db
 .claude/
+uploads/notes/*
+uploads/certificates/*
+!uploads/notes/.gitkeep
+!uploads/certificates/.gitkeep
+*.pyc
+.DS_Store
+EduVoxus_Project_Report.pdf

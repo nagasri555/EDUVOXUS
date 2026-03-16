@@ -32,8 +32,17 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "eduvoxus-secret-key-2024")
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///eduvox.db'
+
+# Database: Use DATABASE_URL env var for production (PostgreSQL), fallback to SQLite for local dev
+database_url = os.getenv("DATABASE_URL", "sqlite:///eduvox.db")
+# Render/Heroku use "postgres://" but SQLAlchemy 2.x requires "postgresql://"
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    "pool_pre_ping": True,  # Verify connections before use (handles DB restarts)
+}
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 

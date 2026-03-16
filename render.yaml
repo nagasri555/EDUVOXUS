@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: eduvoxus
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.11"
+      - key: FLASK_DEBUG
+        value: "false"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: eduvoxus-db
+          property: connectionString
+
+databases:
+  - name: eduvoxus-db
+    plan: free
+    databaseName: eduvoxus
+    ipAllowList: []
