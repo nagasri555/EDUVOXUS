@@ -63,14 +63,20 @@ document.getElementById('contactForm').addEventListener('submit', function(e) {
         method: 'POST',
         body: formData
     })
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) throw new Error('Failed');
+        return res.json();
+    })
     .then(data => {
-        document.getElementById("contactFormBox").style.display = "none";
-        document.getElementById("successBox").style.display = "block";
+        if (data.status === 'success') {
+            document.getElementById("contactFormBox").style.display = "none";
+            document.getElementById("successBox").style.display = "block";
+        } else {
+            alert(data.message || "Failed to send message. Please try again.");
+        }
     })
     .catch(() => {
-        document.getElementById("contactFormBox").style.display = "none";
-        document.getElementById("successBox").style.display = "block";
+        alert("Failed to send message. Please check your connection and try again.");
     });
 });
 

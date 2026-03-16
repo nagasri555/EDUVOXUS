@@ -191,7 +191,7 @@ function submitAll() {
         const btns = document.createElement('div');
         btns.className = 'text-center mt-4';
         btns.innerHTML = `
-            <a href="/voice?topic={{ topic }}&count=${questions.length}" style="padding: 10px 22px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; margin-right: 10px;">Try Again</a>
+            <a href="/voice?topic={{ topic | urlencode }}&count=${questions.length}" style="padding: 10px 22px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; margin-right: 10px;">Try Again</a>
             <a href="/mode" style="padding: 10px 22px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); text-decoration: none; border-radius: 50px; font-weight: 600;">Back to Modes</a>
         `;
         resultDiv.appendChild(btns);

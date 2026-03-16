@@ -100,10 +100,20 @@ def validate_email(email):
 
 # Simple in-memory rate limiter
 _rate_limit_store = {}
+_rate_limit_last_cleanup = datetime.utcnow()
 
 def check_rate_limit(key, max_requests=10, window_seconds=60):
     """Returns True if request is allowed, False if rate limited."""
+    global _rate_limit_last_cleanup
     now = datetime.utcnow()
+
+    # Periodic cleanup: remove stale keys every 5 minutes to prevent memory leak
+    if (now - _rate_limit_last_cleanup).total_seconds() > 300:
+        stale_keys = [k for k, v in _rate_limit_store.items() if not v or (now - v[-1]).total_seconds() > window_seconds]
+        for k in stale_keys:
+            del _rate_limit_store[k]
+        _rate_limit_last_cleanup = now
+
     if key not in _rate_limit_store:
         _rate_limit_store[key] = []
     # Clean old entries
@@ -279,7 +289,7 @@ def admin_required(f):
 # -------------------------------------------------
 def award_points(user, points, reason=""):
     user.points = (user.points or 0) + points
-    db.session.commit()
+    # NOTE: caller is responsible for db.session.commit()
 
 
 def check_and_award_badges(user):
@@ -347,19 +357,22 @@ def generate_theory_questions(topic, count, difficulty):
     - Each question on a new line
     """
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.4
-    )
-
-    raw_text = response.choices[0].message.content
-    questions = [
-        q.strip("-\u2022 ").strip()
-        for q in raw_text.split("\n")
-        if q.strip()
-    ]
-    return questions[:count]
+    try:
+        response = client.chat.completions.create(
+            model=AI_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4
+        )
+        raw_text = response.choices[0].message.content
+        questions = [
+            q.strip("-\u2022 ").strip()
+            for q in raw_text.split("\n")
+            if q.strip()
+        ]
+        return questions[:count]
+    except Exception as e:
+        logging.error(f"Failed to generate theory questions: {e}")
+        return [f"Failed to generate questions on {topic}. Please try again."]
 
 
 def get_adaptive_difficulty(user_id, topic):
@@ -694,7 +707,10 @@ def classify_learners():
     if len(user_features) < 3:
         return {}
 
-    assignments, centroids = kmeans_cluster(user_features, k=3)
+    result = kmeans_cluster(user_features, k=3)
+    if result is None:
+        return {}
+    assignments, centroids = result
 
     # Label clusters by centroid avg_score (highest = Advanced)
     centroid_scores = [(i, c[0]) for i, c in enumerate(centroids)]
@@ -976,14 +992,18 @@ Rules:
 - One blank line between questions
 """
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3
-    )
+    try:
+        response = client.chat.completions.create(
+            model=AI_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3
+        )
+        raw = response.choices[0].message.content
+    except Exception as e:
+        logging.error(f"OpenAI API error in quiz: {e}")
+        raw = ""
 
-    raw = response.choices[0].message.content
-    mcq_blocks = raw.strip().split("\n\n")
+    mcq_blocks = raw.strip().split("\n\n") if raw else []
     questions = []
 
     for block in mcq_blocks:
@@ -992,14 +1012,15 @@ Rules:
             continue
 
         question = lines[0].replace("QUESTION:", "").strip()
-        options = [opt[3:].strip() for opt in lines[1:5]]
+        options = [opt[3:].strip() if len(opt) > 3 else opt.strip() for opt in lines[1:5]]
         answer = lines[5].replace("ANSWER:", "").strip().replace(".", "")
 
-        questions.append({
-            "question": question,
-            "options": options,
-            "answer": answer
-        })
+        if len(options) == 4 and answer in ("A", "B", "C", "D"):
+            questions.append({
+                "question": question,
+                "options": options,
+                "answer": answer
+            })
 
     if not questions:
         questions = [{
@@ -1015,13 +1036,21 @@ Rules:
 @login_required
 def quiz_submit():
     data = request.get_json()
+    if not data:
+        return jsonify({"error": "Invalid request"}), 400
+
     topic = data.get("topic", "Unknown")
-    score = data.get("score", 0)
-    total = data.get("total", 1)
+    try:
+        score = int(data.get("score", 0))
+        total = int(data.get("total", 1))
+    except (ValueError, TypeError):
+        score, total = 0, 1
+    if total <= 0:
+        total = 1
     is_timed = data.get("timed", False)
 
     # Save result (normalize to 0-10 scale)
-    normalized_score = round((score / total) * 10)
+    normalized_score = min(10, max(0, round((score / total) * 10)))
     result = InterviewResult(
         user_id=current_user.id,
         topic=topic,
@@ -1062,9 +1091,15 @@ def voice():
 @login_required
 def voice_evaluate():
     data = request.get_json()
-    topic = data.get("topic")
-    questions = data.get("questions")
-    answers = data.get("answers")
+    if not data:
+        return jsonify({"error": "Invalid request"}), 400
+
+    topic = data.get("topic", "General")
+    questions = data.get("questions", [])
+    answers = data.get("answers", [])
+
+    if not questions or not answers or len(questions) != len(answers):
+        return jsonify({"error": "Questions and answers are required and must match in count"}), 400
 
     formatted_text = ""
     for i in range(len(questions)):
@@ -1155,25 +1190,28 @@ def theory():
     except (ValueError, TypeError):
         count = 5
 
-    prompt = f"""
+    try:
+        prompt = f"""
 Generate EXACTLY {count} theory questions on the topic "{topic}".
 - No numbering
 - No repetition
 - Each question on a new line
 """
+        response = client.chat.completions.create(
+            model=AI_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4
+        )
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.4
-    )
-
-    raw_output = response.choices[0].message.content
-    questions = [
-        q.strip("-\u2022 ").strip()
-        for q in raw_output.split("\n")
-        if q.strip()
-    ]
+        raw_output = response.choices[0].message.content
+        questions = [
+            q.strip("-\u2022 ").strip()
+            for q in raw_output.split("\n")
+            if q.strip()
+        ]
+    except Exception as e:
+        logging.error(f"OpenAI API error in theory: {e}")
+        questions = [f"Failed to generate questions on {topic}. Please try again."]
 
     # Award points for theory practice
     award_points(current_user, 3)
@@ -1599,13 +1637,16 @@ Details: {post.content}
 
 Provide a helpful, educational answer. Use examples. Be concise but thorough."""
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.5
-    )
-
-    ai_response = response.choices[0].message.content
+    try:
+        response = client.chat.completions.create(
+            model=AI_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.5
+        )
+        ai_response = response.choices[0].message.content
+    except Exception as e:
+        logging.error(f"OpenAI API error in forum AI answer: {e}")
+        return jsonify({"error": "AI service temporarily unavailable. Please try again."}), 503
 
     reply = ForumReply(
         post_id=post_id,
@@ -1878,6 +1919,8 @@ Make them educational, varied in difficulty, and useful for revision."""
             raw = re.sub(r'^```(?:json)?\s*', '', raw)
             raw = re.sub(r'\s*```$', '', raw)
         cards_data = json.loads(raw)
+        if not isinstance(cards_data, list) or not cards_data:
+            raise ValueError("AI returned invalid flashcard data")
     except Exception as e:
         logging.error(f"Flashcard generation failed: {e}")
         flash("Failed to generate flashcards. Please try again.", "error")
@@ -2166,6 +2209,12 @@ def forbidden(e):
 @app.errorhandler(404)
 def not_found(e):
     return render_template("error.html", code=404, message="Page Not Found"), 404
+
+@app.errorhandler(500)
+def internal_error(e):
+    db.session.rollback()
+    logging.error(f"Internal server error: {e}")
+    return render_template("error.html", code=500, message="Something went wrong. Please try again."), 500
 
 
 # =================================================================

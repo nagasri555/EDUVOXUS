@@ -3,6 +3,7 @@
 
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 <style>
     .nv-container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
     .nv-back { color: rgba(255,255,255,0.5); text-decoration: none; display: inline-block; margin-bottom: 15px; transition: color 0.3s; }
@@ -62,6 +63,6 @@
 {% block scripts %}
 <script>
 const raw = {{ note.content | tojson }};
-document.getElementById('noteContent').innerHTML = marked.parse(raw);
+document.getElementById('noteContent').innerHTML = DOMPurify.sanitize(marked.parse(raw));
 </script>
 {% endblock %}

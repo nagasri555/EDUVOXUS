@@ -99,13 +99,13 @@
         <h3 style="color: white; font-weight: 600; margin-bottom: 8px;">Practice this topic</h3>
         <p style="color: rgba(255,255,255,0.5); margin-bottom: 15px;">Test your knowledge on {{ course.title }}</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <a href="/start?mode=quiz&topic={{ course.title }}" style="padding: 10px 22px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; text-decoration: none; border-radius: 50px; font-weight: 600;">
+            <a href="/start?mode=quiz&topic={{ course.title | urlencode }}" style="padding: 10px 22px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; text-decoration: none; border-radius: 50px; font-weight: 600;">
                 <i class="fas fa-puzzle-piece"></i> Quiz
             </a>
-            <a href="/start?mode=voice&topic={{ course.title }}" style="padding: 10px 22px; background: linear-gradient(135deg, #9333ea, #7e22ce); color: white; text-decoration: none; border-radius: 50px; font-weight: 600;">
+            <a href="/start?mode=voice&topic={{ course.title | urlencode }}" style="padding: 10px 22px; background: linear-gradient(135deg, #9333ea, #7e22ce); color: white; text-decoration: none; border-radius: 50px; font-weight: 600;">
                 <i class="fas fa-microphone"></i> Voice
             </a>
-            <a href="/start?mode=theory&topic={{ course.title }}" style="padding: 10px 22px; background: linear-gradient(135deg, #db2777, #be185d); color: white; text-decoration: none; border-radius: 50px; font-weight: 600;">
+            <a href="/start?mode=theory&topic={{ course.title | urlencode }}" style="padding: 10px 22px; background: linear-gradient(135deg, #db2777, #be185d); color: white; text-decoration: none; border-radius: 50px; font-weight: 600;">
                 <i class="fas fa-book"></i> Theory
             </a>
         </div>

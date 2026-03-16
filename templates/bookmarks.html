@@ -76,11 +76,15 @@
 function deleteBookmark(id) {
     if (!confirm('Remove this bookmark?')) return;
     fetch(`/bookmarks/${id}/delete`, { method: 'POST' })
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) throw new Error('Failed');
+        return res.json();
+    })
     .then(() => {
         const el = document.getElementById('bm-' + id);
         if (el) el.remove();
-    });
+    })
+    .catch(() => alert('Failed to delete bookmark. Please try again.'));
 }
 </script>
 {% endblock %}

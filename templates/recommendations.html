@@ -164,7 +164,7 @@
         {% if similar_topics %}
         <div class="rec-grid">
             {% for rec in similar_topics %}
-            <a href="/start?topic={{ rec.topic }}" class="rec-topic-card">
+            <a href="/start?topic={{ rec.topic | urlencode }}" class="rec-topic-card">
                 <div class="rec-topic-name">{{ rec.topic }}</div>
                 <div class="rec-topic-meta">Similarity: {{ (rec.similarity_score * 100) | round(0) }}%</div>
             </a>
@@ -184,7 +184,7 @@
         {% if collab_recommendations %}
         <div class="rec-grid">
             {% for rec in collab_recommendations %}
-            <a href="/start?topic={{ rec.topic }}" class="rec-topic-card">
+            <a href="/start?topic={{ rec.topic | urlencode }}" class="rec-topic-card">
                 <div class="rec-topic-name">{{ rec.topic }}</div>
                 <div class="rec-topic-meta">Predicted score: {{ rec.predicted_score }}/10</div>
             </a>

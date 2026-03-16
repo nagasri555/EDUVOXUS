@@ -217,7 +217,9 @@ function submitQuiz(autoSubmit) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic: "{{ topic }}", score: correct, total: total, timed: isTimed })
-    });
+    })
+    .then(res => { if (!res.ok) console.error('Failed to save quiz result'); })
+    .catch(err => console.error('Failed to save quiz result:', err));
 
     const reviewBox = document.getElementById("reviewBox");
     reviewBox.innerHTML = "";
