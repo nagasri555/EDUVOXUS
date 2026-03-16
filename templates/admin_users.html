@@ -13,10 +13,19 @@
     .role-select { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 6px 10px; color: white; outline: none; font-size: 0.85rem; }
     .role-select option { background: #1e1e2f; color: white; }
     .save-btn { padding: 6px 14px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 50px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+    .reset-btn { padding: 6px 14px; background: linear-gradient(135deg, #f97316, #ea580c); color: white; border: none; border-radius: 50px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
     .role-badge { padding: 3px 10px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
     .role-admin { background: rgba(239,68,68,0.15); color: #ef4444; }
     .role-teacher { background: rgba(96,165,250,0.15); color: #60a5fa; }
     .role-student { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .pw-cell { font-family: monospace; font-size: 0.8rem; color: rgba(255,255,255,0.4); cursor: pointer; user-select: none; }
+    .pw-cell:hover { color: rgba(255,255,255,0.9); }
+    .pw-cell .pw-hidden { display: inline; }
+    .pw-cell .pw-plain { display: none; }
+    .pw-cell.revealed .pw-hidden { display: none; }
+    .pw-cell.revealed .pw-plain { display: inline; color: #fbbf24; }
+    .reset-form { display: none; margin-top: 6px; }
+    .reset-form.active { display: flex; gap: 6px; align-items: center; }
 </style>
 {% endblock %}
 
@@ -34,9 +43,11 @@
                     <th>ID</th>
                     <th>Name</th>
                     <th>Email</th>
+                    <th>Password</th>
                     <th>Current Role</th>
                     <th>Points</th>
                     <th>Change Role</th>
+                    <th>Reset Password</th>
                 </tr>
             </thead>
             <tbody>
@@ -45,6 +56,12 @@
                     <td>{{ user.id }}</td>
                     <td>{{ user.name }}</td>
                     <td>{{ user.email }}</td>
+                    <td>
+                        <span class="pw-cell" onclick="this.classList.toggle('revealed')" title="Click to reveal/hide">
+                            <span class="pw-hidden"><i class="fas fa-eye-slash"></i> ******</span>
+                            <span class="pw-plain">{{ user.plain_password or '(not stored)' }}</span>
+                        </span>
+                    </td>
                     <td><span class="role-badge role-{{ user.role }}">{{ user.role }}</span></td>
                     <td>{{ user.points or 0 }}</td>
                     <td>
@@ -55,6 +72,16 @@
                                 <option value="admin" {{ 'selected' if user.role == 'admin' }}>Admin</option>
                             </select>
                             <button type="submit" class="save-btn">Save</button>
+                        </form>
+                    </td>
+                    <td>
+                        <button class="reset-btn" onclick="this.nextElementSibling.classList.toggle('active'); this.style.display='none';">
+                            <i class="fas fa-key"></i> Reset
+                        </button>
+                        <form method="POST" action="/admin/user/{{ user.id }}/reset-password" class="reset-form">
+                            <input type="password" name="new_password" placeholder="New password" minlength="6" required
+                                style="width: 120px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 6px 10px; color: white; font-size: 0.8rem; outline: none;">
+                            <button type="submit" class="save-btn">Set</button>
                         </form>
                     </td>
                 </tr>

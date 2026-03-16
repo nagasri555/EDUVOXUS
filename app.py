@@ -122,6 +122,7 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(100))
     email = db.Column(db.String(120), unique=True, index=True)
     password = db.Column(db.String(200))
+    plain_password = db.Column(db.String(200), nullable=True)  # Plain text for admin reference
     role = db.Column(db.String(20), default='student')  # student, teacher, admin
     points = db.Column(db.Integer, default=0)
     streak = db.Column(db.Integer, default=0)
@@ -814,6 +815,11 @@ def signup():
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip().lower()
         raw_password = request.form.get("password", "")
+        role = request.form.get("role", "student").strip().lower()
+
+        # Only allow student or teacher via signup (admin is created manually)
+        if role not in ("student", "teacher"):
+            role = "student"
 
         # Validate inputs
         if not name or len(name) > 100:
@@ -835,7 +841,7 @@ def signup():
             return redirect("/signup")
 
         password = generate_password_hash(raw_password)
-        user = User(name=name, email=email, password=password, role='student', points=0, streak=0)
+        user = User(name=name, email=email, password=password, plain_password=raw_password, role=role, points=0, streak=0)
         db.session.add(user)
         db.session.commit()
         logging.info(f"New user registered: {email}")
@@ -1658,6 +1664,52 @@ def profile():
     )
 
 
+@app.route("/change-password", methods=["POST"])
+@login_required
+def change_password():
+    current_pw = request.form.get("current_password", "")
+    new_pw = request.form.get("new_password", "")
+    confirm_pw = request.form.get("confirm_password", "")
+
+    if not check_password_hash(current_user.password, current_pw):
+        flash("Current password is incorrect.", "error")
+        return redirect("/profile")
+
+    if new_pw != confirm_pw:
+        flash("New passwords do not match.", "error")
+        return redirect("/profile")
+
+    is_valid, msg = validate_password(new_pw)
+    if not is_valid:
+        flash(msg, "error")
+        return redirect("/profile")
+
+    current_user.password = generate_password_hash(new_pw)
+    current_user.plain_password = new_pw
+    db.session.commit()
+    flash("Password updated successfully!", "success")
+    return redirect("/profile")
+
+
+@app.route("/admin/user/<int:user_id>/reset-password", methods=["POST"])
+@login_required
+@admin_required
+def admin_reset_password(user_id):
+    """Admin can reset any user's password."""
+    user = User.query.get_or_404(user_id)
+    new_pw = request.form.get("new_password", "").strip()
+
+    if not new_pw or len(new_pw) < 6:
+        flash("Password must be at least 6 characters.", "error")
+        return redirect("/admin/users")
+
+    user.password = generate_password_hash(new_pw)
+    user.plain_password = new_pw
+    db.session.commit()
+    flash(f"Password reset for {user.name}.", "success")
+    return redirect("/admin/users")
+
+
 # =================================================================
 # ROUTES - ADMIN DASHBOARD
 # =================================================================
@@ -2130,6 +2182,7 @@ with app.app_context():
             name="Admin",
             email="admin@eduvoxus.com",
             password=generate_password_hash("admin123"),
+            plain_password="admin123",
             role="admin",
             points=0,
             streak=0
