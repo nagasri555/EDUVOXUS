@@ -34,11 +34,14 @@
 <div class="prof-container">
     <div class="prof-card">
         <div class="prof-header">
-            <div class="prof-avatar">{{ user.name[0] | upper }}</div>
+            <div class="prof-avatar">{{ (user.name or 'U')[0] | upper }}</div>
             <div class="prof-info">
                 <h1>{{ user.name }}</h1>
                 <p>{{ user.email }}</p>
                 <span class="prof-role"><i class="fas fa-user-tag"></i> {{ user.role }}</span>
+                <a href="/export-progress" style="display: inline-block; margin-left: 10px; padding: 4px 14px; background: rgba(96,165,250,0.15); color: #60a5fa; text-decoration: none; border-radius: 50px; font-size: 0.8rem; font-weight: 600;">
+                    <i class="fas fa-download"></i> Export PDF
+                </a>
             </div>
         </div>
     </div>

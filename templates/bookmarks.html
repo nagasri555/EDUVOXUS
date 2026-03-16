@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}EduVoxus | Bookmarks{% endblock %}
+
+{% block head %}
+<style>
+    .bm-container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+    .bm-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px; }
+    .bm-header h1 { color: white; font-size: 2rem; font-weight: 700; }
+    .bm-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+    .bm-filter { padding: 6px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; color: rgba(255,255,255,0.7); font-size: 0.85rem; text-decoration: none; transition: all 0.3s; }
+    .bm-filter:hover, .bm-filter.active { background: linear-gradient(135deg, #3b82f6, #9333ea); color: white; border-color: transparent; }
+    .bm-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; margin-bottom: 12px; transition: all 0.3s; }
+    .bm-card:hover { background: rgba(255,255,255,0.05); }
+    .bm-question { color: white; font-weight: 600; font-size: 1rem; margin-bottom: 8px; }
+    .bm-answer { color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-bottom: 10px; }
+    .bm-meta { display: flex; justify-content: space-between; align-items: center; }
+    .bm-tags { display: flex; gap: 8px; }
+    .bm-tag { padding: 3px 10px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; }
+    .tag-topic { background: rgba(96,165,250,0.15); color: #60a5fa; }
+    .tag-source { background: rgba(192,132,252,0.15); color: #c084fc; }
+    .bm-delete { background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; transition: color 0.3s; }
+    .bm-delete:hover { color: #ef4444; }
+    .bm-count { color: rgba(255,255,255,0.5); font-size: 0.9rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bm-container">
+    <div class="bm-header">
+        <div>
+            <h1><i class="fas fa-bookmark" style="color: #fbbf24;"></i> Bookmarks</h1>
+            <span class="bm-count">{{ bookmarks | length }} saved questions</span>
+        </div>
+    </div>
+
+    {% if topics %}
+    <div class="bm-filters" style="margin-bottom: 20px;">
+        <a href="/bookmarks" class="bm-filter {{ 'active' if not current_topic }}">All</a>
+        {% for t in topics %}
+        <a href="/bookmarks?topic={{ t }}" class="bm-filter {{ 'active' if current_topic == t }}">{{ t }}</a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% for bm in bookmarks %}
+    <div class="bm-card" id="bm-{{ bm.id }}">
+        <div class="bm-question">{{ bm.question }}</div>
+        {% if bm.answer %}
+        <div class="bm-answer"><i class="fas fa-check-circle" style="color: #22c55e; margin-right: 6px;"></i>{{ bm.answer }}</div>
+        {% endif %}
+        <div class="bm-meta">
+            <div class="bm-tags">
+                <span class="bm-tag tag-topic">{{ bm.topic }}</span>
+                <span class="bm-tag tag-source">{{ bm.source }}</span>
+                <span style="color: rgba(255,255,255,0.3); font-size: 0.75rem;">{{ bm.created_at.strftime("%b %d, %Y") }}</span>
+            </div>
+            <button class="bm-delete" onclick="deleteBookmark({{ bm.id }})" title="Remove bookmark">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% if not bookmarks %}
+    <div style="text-align: center; padding: 60px; color: rgba(255,255,255,0.4);">
+        <i class="fas fa-bookmark" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
+        <p>No bookmarks yet. Save questions from quizzes, theory, or voice practice!</p>
+        <a href="/mode" style="display: inline-block; margin-top: 15px; padding: 10px 24px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; text-decoration: none; border-radius: 50px; font-weight: 600;">Start Learning</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deleteBookmark(id) {
+    if (!confirm('Remove this bookmark?')) return;
+    fetch(`/bookmarks/${id}/delete`, { method: 'POST' })
+    .then(res => res.json())
+    .then(() => {
+        const el = document.getElementById('bm-' + id);
+        if (el) el.remove();
+    });
+}
+</script>
+{% endblock %}

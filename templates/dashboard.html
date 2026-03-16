@@ -20,6 +20,9 @@
         <div class="dashboard-header">
             <h1 class="dashboard-title">
                 <i class="fas fa-chart-pie"></i> Performance Dashboard
+                <a href="/export-progress" style="font-size: 0.8rem; padding: 6px 16px; background: rgba(96,165,250,0.15); color: #60a5fa; text-decoration: none; border-radius: 50px; font-weight: 600; margin-left: 15px;">
+                    <i class="fas fa-download"></i> Export PDF
+                </a>
             </h1>
             <div class="tab-navigation">
                 <button class="tab-btn active" onclick="showTab('performance')">
@@ -36,7 +39,7 @@
 
         <!-- Performance Tab -->
         <div id="performance-tab" class="tab-content active">
-            <div class="stats-grid" style="grid-template-columns: repeat(5, 1fr);">
+            <div class="stats-grid stats-grid-5">
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-tasks"></i></div>
                     <div class="stat-label">Attempts</div>
@@ -151,7 +154,7 @@
                         </div>
                         <div>
                             <span class="weak-topic-score">Avg: {{ wt.avg_score }}/10</span>
-                            <a href="/start?mode=quiz" style="margin-left: 10px; padding: 4px 12px; background: rgba(96,165,250,0.15); color: #60a5fa; border-radius: 50px; font-size: 0.8rem; text-decoration: none;">Practice</a>
+                            <a href="/start?mode=quiz&topic={{ wt.topic }}" style="margin-left: 10px; padding: 4px 12px; background: rgba(96,165,250,0.15); color: #60a5fa; border-radius: 50px; font-size: 0.8rem; text-decoration: none;">Practice</a>
                         </div>
                     </div>
                     {% endfor %}

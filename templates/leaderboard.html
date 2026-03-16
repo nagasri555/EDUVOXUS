@@ -78,7 +78,7 @@
                         </td>
                         <td>
                             <div class="user-info">
-                                <div class="user-avatar">{{ user.name[0] | upper }}</div>
+                                <div class="user-avatar">{{ (user.name or 'U')[0] | upper }}</div>
                                 <span>{{ user.name }}{% if user.id == current_user.id %} (You){% endif %}</span>
                             </div>
                         </td>
@@ -121,7 +121,7 @@
                         </td>
                         <td>
                             <div class="user-info">
-                                <div class="user-avatar">{{ r[1][0] | upper }}</div>
+                                <div class="user-avatar">{{ (r[1] or 'U')[0] | upper }}</div>
                                 <span>{{ r[1] }}</span>
                             </div>
                         </td>

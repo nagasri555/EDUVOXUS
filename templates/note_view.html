@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{{ note.topic }} Notes | EduVoxus{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+    .nv-container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+    .nv-back { color: rgba(255,255,255,0.5); text-decoration: none; display: inline-block; margin-bottom: 15px; transition: color 0.3s; }
+    .nv-back:hover { color: white; }
+    .nv-header { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 25px; backdrop-filter: blur(12px); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+    .nv-header h1 { color: white; font-size: 1.6rem; font-weight: 700; }
+    .nv-header-meta { color: rgba(255,255,255,0.5); font-size: 0.85rem; }
+    .nv-actions { display: flex; gap: 10px; }
+    .nv-btn { padding: 8px 18px; border-radius: 50px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.3s; text-decoration: none; border: none; }
+    .nv-print { background: rgba(96,165,250,0.15); color: #60a5fa; }
+    .nv-print:hover { background: rgba(96,165,250,0.25); color: #60a5fa; }
+    .nv-delete { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .nv-delete:hover { background: rgba(239,68,68,0.25); }
+    .nv-content { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; backdrop-filter: blur(12px); }
+    .nv-content h1, .nv-content h2, .nv-content h3 { color: white; margin-top: 25px; margin-bottom: 12px; }
+    .nv-content h2 { font-size: 1.4rem; color: #60a5fa; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+    .nv-content h3 { font-size: 1.15rem; color: #c084fc; }
+    .nv-content p { color: rgba(255,255,255,0.8); line-height: 1.8; margin-bottom: 12px; }
+    .nv-content ul, .nv-content ol { color: rgba(255,255,255,0.8); padding-left: 25px; margin-bottom: 12px; }
+    .nv-content li { margin-bottom: 6px; line-height: 1.6; }
+    .nv-content strong { color: white; }
+    .nv-content code { background: rgba(96,165,250,0.15); color: #60a5fa; padding: 2px 6px; border-radius: 4px; font-size: 0.9rem; }
+    .nv-content pre { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; overflow-x: auto; margin: 15px 0; }
+    .nv-content pre code { background: none; padding: 0; color: rgba(255,255,255,0.9); }
+    .nv-content blockquote { border-left: 3px solid #c084fc; padding-left: 15px; margin: 15px 0; color: rgba(255,255,255,0.6); }
+    @media print {
+        body { background: white !important; }
+        .navbar, .glow-orb, .nv-back, .nv-actions { display: none !important; }
+        .nv-content, .nv-header { background: white !important; border: none !important; color: black !important; }
+        .nv-content h2, .nv-content h3, .nv-content p, .nv-content li { color: black !important; }
+        .nv-header h1 { color: black !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="nv-container">
+    <a href="/notes" class="nv-back"><i class="fas fa-arrow-left"></i> Back to Notes</a>
+
+    <div class="nv-header">
+        <div>
+            <h1><i class="fas fa-sticky-note" style="color: #db2777;"></i> {{ note.topic }}</h1>
+            <div class="nv-header-meta">Generated {{ note.created_at.strftime("%B %d, %Y at %I:%M %p") }}</div>
+        </div>
+        <div class="nv-actions">
+            <button class="nv-btn nv-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+            <form method="POST" action="/notes/{{ note.id }}/delete" style="display: inline;">
+                <button type="submit" class="nv-btn nv-delete" onclick="return confirm('Delete these notes?')"><i class="fas fa-trash"></i> Delete</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="nv-content" id="noteContent"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const raw = {{ note.content | tojson }};
+document.getElementById('noteContent').innerHTML = marked.parse(raw);
+</script>
+{% endblock %}

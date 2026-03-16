@@ -18,19 +18,44 @@
     .result-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 35px; backdrop-filter: blur(12px); max-width: 800px; margin: 20px auto; }
     .result-card h2, .result-card h4 { color: white; }
     .result-card p { color: rgba(255,255,255,0.6); }
+    .timer-bar { text-align: center; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 12px; }
+    .timer-display { font-size: 1.4rem; font-weight: 700; color: #22c55e; font-family: monospace; }
+    .timer-display.warning { color: #fbbf24; }
+    .timer-display.danger { color: #ef4444; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .timer-label { color: rgba(255,255,255,0.5); font-size: 0.85rem; }
+    .bookmark-btn { background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 1rem; transition: color 0.3s; float: right; }
+    .bookmark-btn:hover { color: #fbbf24; }
+    .bookmark-btn.bookmarked { color: #fbbf24; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container mt-4">
 
+{% if timed %}
+<div class="timer-bar" id="timerBar">
+    <i class="fas fa-clock" style="color: #60a5fa;"></i>
+    <span class="timer-label">Time Remaining:</span>
+    <span class="timer-display" id="timerDisplay">--:--</span>
+</div>
+{% endif %}
+
 <div id="quizBox" class="quiz-card">
-    <h3 class="mb-4 text-center">Quiz on {{ topic }}</h3>
+    <h3 class="mb-4 text-center">
+        Quiz on {{ topic }}
+        {% if timed %}<span style="font-size: 0.8rem; color: #fbbf24;"><i class="fas fa-bolt"></i> Timed</span>{% endif %}
+    </h3>
 
     {% for q in questions %}
     {% set qno = loop.index %}
     <div class="quiz-question" data-qno="{{ qno }}">
-        <p><strong>{{ qno }}. {{ q.question }}</strong></p>
+        <p>
+            <strong>{{ qno }}. {{ q.question }}</strong>
+            <button class="bookmark-btn" onclick="bookmarkQuestion(this, {{ qno }})" title="Bookmark this question">
+                <i class="far fa-bookmark"></i>
+            </button>
+        </p>
         {% set letters = ['A','B','C','D'] %}
         {% for opt in q.options %}
             <label class="option-label" data-question="{{ qno }}" data-option="{{ letters[loop.index0] }}">
@@ -104,7 +129,55 @@
 
 {% block scripts %}
 <script>
-function submitQuiz() {
+const isTimed = {{ 'true' if timed else 'false' }};
+const totalDuration = {{ duration }};
+let timeLeft = totalDuration;
+let timerInterval;
+
+if (isTimed) {
+    updateTimerDisplay(timeLeft);
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimerDisplay(timeLeft);
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            submitQuiz(true);
+        }
+    }, 1000);
+}
+
+function updateTimerDisplay(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    const display = document.getElementById('timerDisplay');
+    if (!display) return;
+    display.textContent = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    display.className = 'timer-display';
+    if (seconds <= totalDuration * 0.25) display.classList.add('danger');
+    else if (seconds <= totalDuration * 0.5) display.classList.add('warning');
+}
+
+function bookmarkQuestion(btn, qno) {
+    const questionEl = document.querySelector(`.quiz-question[data-qno="${qno}"] p strong`);
+    const question = questionEl ? questionEl.textContent.replace(/^\d+\.\s*/, '') : '';
+    const correctAns = document.getElementById(`ans${qno}`).value;
+
+    fetch('/bookmarks/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: question, answer: 'Answer: ' + correctAns, topic: "{{ topic }}", source: 'quiz' })
+    })
+    .then(res => res.json())
+    .then(data => {
+        const icon = btn.querySelector('i');
+        icon.className = 'fas fa-bookmark';
+        btn.classList.add('bookmarked');
+    });
+}
+
+function submitQuiz(autoSubmit) {
+    if (timerInterval) clearInterval(timerInterval);
+
     let correct = 0;
     let total = {{ questions|length }};
     let unanswered = 0;
@@ -116,7 +189,7 @@ function submitQuiz() {
         if (selected && selected.value === correctAns) correct++;
     }
 
-    if (unanswered > 0) {
+    if (!autoSubmit && unanswered > 0) {
         alert(`You have ${unanswered} unanswered question(s).`);
         return;
     }
@@ -125,6 +198,7 @@ function submitQuiz() {
     const accuracy = Math.round((correct / total) * 100);
 
     document.getElementById("quizBox").style.display = "none";
+    if (document.getElementById("timerBar")) document.getElementById("timerBar").style.display = "none";
     document.getElementById("resultBox").style.display = "block";
 
     document.getElementById("correctCount").innerText = correct;
@@ -136,16 +210,15 @@ function submitQuiz() {
     let feedback = "Keep Practicing!";
     if (accuracy >= 80) feedback = "Excellent Work!";
     else if (accuracy >= 50) feedback = "Good Job!";
+    if (autoSubmit) feedback += " (Time's up!)";
     document.getElementById("feedbackText").innerText = feedback;
 
-    // Save score to backend
     fetch('/quiz-submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: "{{ topic }}", score: correct, total: total })
+        body: JSON.stringify({ topic: "{{ topic }}", score: correct, total: total, timed: isTimed })
     });
 
-    // Build answer review
     const reviewBox = document.getElementById("reviewBox");
     reviewBox.innerHTML = "";
 

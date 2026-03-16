@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}EduVoxus | Study Notes{% endblock %}
+
+{% block head %}
+<style>
+    .notes-container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+    .notes-header { text-align: center; margin-bottom: 30px; }
+    .notes-header h1 { color: white; font-size: 2rem; font-weight: 700; }
+    .notes-header p { color: rgba(255,255,255,0.6); }
+    .notes-generate { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 25px; backdrop-filter: blur(12px); margin-bottom: 30px; }
+    .notes-generate h3 { color: white; font-size: 1.2rem; font-weight: 600; margin-bottom: 15px; }
+    .notes-form { display: flex; gap: 12px; }
+    .notes-form input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 10px 16px; color: white; outline: none; font-size: 0.95rem; }
+    .notes-form input::placeholder { color: rgba(255,255,255,0.3); }
+    .notes-gen-btn { padding: 10px 24px; background: linear-gradient(135deg, #db2777, #be185d); color: white; border: none; border-radius: 50px; font-weight: 600; cursor: pointer; transition: all 0.3s; white-space: nowrap; }
+    .notes-gen-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(219,39,119,0.4); }
+    .note-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+    .note-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 22px; transition: all 0.3s; }
+    .note-card:hover { transform: translateY(-4px); background: rgba(255,255,255,0.05); border-color: rgba(219,39,119,0.3); }
+    .note-topic { color: #db2777; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .note-title { color: white; font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; }
+    .note-preview { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-bottom: 15px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .note-meta { color: rgba(255,255,255,0.3); font-size: 0.8rem; margin-bottom: 12px; }
+    .note-actions { display: flex; gap: 10px; }
+    .note-view-btn { flex: 1; padding: 8px; text-align: center; background: linear-gradient(135deg, #db2777, #be185d); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; font-size: 0.85rem; transition: all 0.3s; }
+    .note-view-btn:hover { color: white; }
+    .note-del-btn { padding: 8px 14px; background: rgba(239,68,68,0.15); color: #ef4444; border: none; border-radius: 50px; font-size: 0.85rem; cursor: pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="notes-container">
+    <div class="notes-header">
+        <h1><i class="fas fa-sticky-note" style="color: #db2777;"></i> AI Study Notes</h1>
+        <p>Generate comprehensive study notes on any topic using AI</p>
+    </div>
+
+    <div class="notes-generate">
+        <h3><i class="fas fa-magic" style="color: #db2777;"></i> Generate New Notes</h3>
+        <form method="POST" action="/notes/generate" class="notes-form">
+            <input type="text" name="topic" placeholder="Enter topic (e.g. Operating Systems, Neural Networks)" required>
+            <button type="submit" class="notes-gen-btn"><i class="fas fa-file-alt"></i> Generate</button>
+        </form>
+    </div>
+
+    {% if notes %}
+    <h3 style="color: white; font-size: 1.2rem; font-weight: 600; margin-bottom: 15px;">
+        <i class="fas fa-book" style="color: #60a5fa;"></i> Your Notes ({{ notes | length }})
+    </h3>
+    <div class="note-grid">
+        {% for note in notes %}
+        <div class="note-card">
+            <div class="note-topic">{{ note.topic }}</div>
+            <div class="note-title">Notes on {{ note.topic }}</div>
+            <div class="note-preview">{{ note.content[:150] }}...</div>
+            <div class="note-meta"><i class="fas fa-calendar"></i> {{ note.created_at.strftime("%b %d, %Y") }}</div>
+            <div class="note-actions">
+                <a href="/notes/{{ note.id }}" class="note-view-btn"><i class="fas fa-eye"></i> View</a>
+                <form method="POST" action="/notes/{{ note.id }}/delete" style="display: inline;">
+                    <button type="submit" class="note-del-btn" onclick="return confirm('Delete these notes?')"><i class="fas fa-trash"></i></button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.4);">
+        <i class="fas fa-sticky-note" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
+        <p>No notes yet. Generate your first set of study notes above!</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

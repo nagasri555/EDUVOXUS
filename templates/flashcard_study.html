@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Study: {{ deck.title }} | EduVoxus{% endblock %}
+
+{% block head %}
+<style>
+    .study-container { max-width: 650px; margin: 30px auto; padding: 0 20px; }
+    .study-header { text-align: center; margin-bottom: 25px; }
+    .study-header h2 { color: white; font-size: 1.6rem; font-weight: 700; }
+    .study-header p { color: rgba(255,255,255,0.5); }
+    .study-progress { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .progress-bar-bg { flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 50px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #c084fc); border-radius: 50px; transition: width 0.4s ease; }
+    .progress-text { color: rgba(255,255,255,0.6); font-size: 0.85rem; white-space: nowrap; }
+
+    /* Flip Card */
+    .flip-card { perspective: 1000px; height: 320px; margin-bottom: 20px; cursor: pointer; }
+    .flip-card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
+    .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+    .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; }
+    .flip-card-front { background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(147,51,234,0.15)); border: 1px solid rgba(96,165,250,0.3); }
+    .flip-card-back { background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(22,163,106,0.15)); border: 1px solid rgba(34,197,94,0.3); transform: rotateY(180deg); }
+    .card-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; font-weight: 600; }
+    .flip-card-front .card-label { color: #60a5fa; }
+    .flip-card-back .card-label { color: #22c55e; }
+    .card-text { color: white; font-size: 1.15rem; line-height: 1.6; }
+    .flip-hint { color: rgba(255,255,255,0.3); font-size: 0.8rem; margin-top: 15px; }
+
+    /* Rating Buttons */
+    .rating-buttons { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; }
+    .rate-btn { padding: 10px 20px; border: none; border-radius: 50px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.3s; }
+    .rate-again { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .rate-hard { background: rgba(249,115,22,0.15); color: #f97316; }
+    .rate-medium { background: rgba(96,165,250,0.15); color: #60a5fa; }
+    .rate-easy { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .rate-btn:hover { transform: translateY(-2px); }
+
+    .nav-arrows { display: flex; justify-content: center; gap: 15px; }
+    .nav-arrow { padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 50px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+    .nav-arrow:hover { background: rgba(255,255,255,0.1); }
+    .nav-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .complete-section { text-align: center; padding: 40px; display: none; }
+    .complete-section h2 { color: white; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px; }
+    .complete-section p { color: rgba(255,255,255,0.6); margin-bottom: 20px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="study-container">
+    <div class="study-header">
+        <h2>{{ deck.title }}</h2>
+        <p>{{ cards | length }} cards | Click card to flip</p>
+    </div>
+
+    <div class="study-progress">
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+        <span class="progress-text" id="progressText">0 / {{ cards | length }}</span>
+    </div>
+
+    <div id="studyArea">
+        <div class="flip-card" id="flipCard" onclick="flipCard()">
+            <div class="flip-card-inner" id="flipInner">
+                <div class="flip-card-front">
+                    <span class="card-label">Question</span>
+                    <div class="card-text" id="cardFront"></div>
+                    <div class="flip-hint"><i class="fas fa-sync-alt"></i> Click to reveal answer</div>
+                </div>
+                <div class="flip-card-back">
+                    <span class="card-label">Answer</span>
+                    <div class="card-text" id="cardBack"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rating-buttons" id="ratingBtns" style="display: none;">
+            <button class="rate-btn rate-again" onclick="rateCard('again')">Again</button>
+            <button class="rate-btn rate-hard" onclick="rateCard('hard')">Hard</button>
+            <button class="rate-btn rate-medium" onclick="rateCard('medium')">Good</button>
+            <button class="rate-btn rate-easy" onclick="rateCard('easy')">Easy</button>
+        </div>
+
+        <div class="nav-arrows">
+            <button class="nav-arrow" id="prevBtn" onclick="prevCard()" disabled><i class="fas fa-arrow-left"></i> Prev</button>
+            <button class="nav-arrow" id="nextBtn" onclick="nextCard()">Next <i class="fas fa-arrow-right"></i></button>
+        </div>
+    </div>
+
+    <div class="complete-section" id="completeSection">
+        <h2>Deck Complete!</h2>
+        <p>You've reviewed all {{ cards | length }} cards. Great job!</p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button onclick="restartDeck()" style="padding: 10px 24px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 50px; font-weight: 600; cursor: pointer;">
+                <i class="fas fa-redo"></i> Study Again
+            </button>
+            <a href="/flashcards" style="padding: 10px 24px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); text-decoration: none; border-radius: 50px; font-weight: 600;">
+                <i class="fas fa-arrow-left"></i> All Decks
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const cards = {{ cards | map(attribute='id') | list | tojson }};
+const fronts = {{ cards | map(attribute='front') | list | tojson }};
+const backs = {{ cards | map(attribute='back') | list | tojson }};
+const deckId = {{ deck.id }};
+let currentIdx = 0;
+let reviewed = 0;
+
+function esc(text) {
+    const d = document.createElement('div');
+    d.textContent = String(text);
+    return d.innerHTML;
+}
+
+function loadCard() {
+    document.getElementById('flipCard').classList.remove('flipped');
+    document.getElementById('ratingBtns').style.display = 'none';
+    document.getElementById('cardFront').innerHTML = esc(fronts[currentIdx]);
+    document.getElementById('cardBack').innerHTML = esc(backs[currentIdx]);
+    document.getElementById('prevBtn').disabled = currentIdx === 0;
+    document.getElementById('progressFill').style.width = (reviewed / cards.length * 100) + '%';
+    document.getElementById('progressText').textContent = reviewed + ' / ' + cards.length;
+}
+
+function flipCard() {
+    document.getElementById('flipCard').classList.toggle('flipped');
+    if (document.getElementById('flipCard').classList.contains('flipped')) {
+        document.getElementById('ratingBtns').style.display = 'flex';
+    }
+}
+
+function rateCard(rating) {
+    fetch(`/flashcards/${deckId}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ card_id: cards[currentIdx], rating: rating })
+    });
+    reviewed++;
+    if (currentIdx < cards.length - 1) {
+        currentIdx++;
+        loadCard();
+    } else {
+        document.getElementById('studyArea').style.display = 'none';
+        document.getElementById('completeSection').style.display = 'block';
+        document.getElementById('progressFill').style.width = '100%';
+        document.getElementById('progressText').textContent = cards.length + ' / ' + cards.length;
+    }
+}
+
+function nextCard() {
+    if (currentIdx < cards.length - 1) { currentIdx++; loadCard(); }
+}
+
+function prevCard() {
+    if (currentIdx > 0) { currentIdx--; loadCard(); }
+}
+
+function restartDeck() {
+    currentIdx = 0;
+    reviewed = 0;
+    document.getElementById('studyArea').style.display = 'block';
+    document.getElementById('completeSection').style.display = 'none';
+    loadCard();
+}
+
+if (cards.length > 0) loadCard();
+</script>
+{% endblock %}

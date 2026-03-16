@@ -10,7 +10,14 @@
     <div id="questionBox" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; backdrop-filter: blur(12px); max-width: 900px; margin: auto;">
         <ol style="font-size: 1.1rem; color: rgba(255,255,255,0.8); line-height: 2;">
             {% for q in questions %}
-                <li style="margin-bottom: 10px;">{{ q }}</li>
+                <li style="margin-bottom: 10px;">
+                    {{ q }}
+                    <button onclick="bookmarkQ(this, '{{ q | replace("'", "\\'") }}')" title="Bookmark"
+                        style="background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; margin-left: 8px; transition: color 0.3s;"
+                        onmouseover="this.style.color='#fbbf24'" onmouseout="if(!this.classList.contains('done'))this.style.color='rgba(255,255,255,0.3)'">
+                        <i class="far fa-bookmark"></i>
+                    </button>
+                </li>
             {% endfor %}
         </ol>
 
@@ -40,6 +47,20 @@
 function finishPractice() {
     document.getElementById("questionBox").style.display = "none";
     document.getElementById("resultBox").style.display = "block";
+}
+
+function bookmarkQ(btn, question) {
+    fetch('/bookmarks/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: question, answer: '', topic: "{{ topic }}", source: 'theory' })
+    })
+    .then(res => res.json())
+    .then(() => {
+        btn.querySelector('i').className = 'fas fa-bookmark';
+        btn.style.color = '#fbbf24';
+        btn.classList.add('done');
+    });
 }
 </script>
 {% endblock %}

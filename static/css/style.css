@@ -1479,6 +1479,23 @@ h1 {
     }
 }
 
+/* ===== STATS GRID 5-COL ===== */
+.stats-grid-5 {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+@media (max-width: 1024px) {
+    .stats-grid-5 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid-5 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 /* ===== GLOWING ORBS (Background Effects) ===== */
 .glow-orb {
     position: fixed;

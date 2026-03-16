@@ -22,11 +22,13 @@
                     <a class="nav-link d-inline mx-2" href="/">Home</a>
                     <a class="nav-link d-inline mx-2" href="/mode">Learn</a>
                     <a class="nav-link d-inline mx-2" href="/chatbot">AI Tutor</a>
+                    <a class="nav-link d-inline mx-2" href="/flashcards">Flashcards</a>
+                    <a class="nav-link d-inline mx-2" href="/notes">Notes</a>
                     <a class="nav-link d-inline mx-2" href="/courses">Courses</a>
                     <a class="nav-link d-inline mx-2" href="/forum">Forum</a>
                     <a class="nav-link d-inline mx-2" href="/leaderboard">Leaderboard</a>
                     <a class="nav-link d-inline mx-2" href="/dashboard">Dashboard</a>
-                    <a class="nav-link d-inline mx-2" href="/about">About</a>
+                    <a class="nav-link d-inline mx-2" href="/recommendations"><i class="fas fa-brain"></i> AI Insights</a>
                     {% if current_user.is_authenticated %}
                     <a class="nav-link d-inline mx-2" href="/profile">
                         <i class="fas fa-user-circle"></i> {{ current_user.name }}

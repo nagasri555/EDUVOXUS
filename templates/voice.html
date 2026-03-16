@@ -13,7 +13,13 @@
 
         <div id="practiceSection">
             <h5 id="questionCounter" class="mt-3" style="color: rgba(255,255,255,0.7);"></h5>
-            <p id="questionText" class="fw-semibold" style="color: white; font-size: 1.1rem;"></p>
+            <p id="questionText" class="fw-semibold" style="color: white; font-size: 1.1rem;">
+            </p>
+            <button id="bookmarkBtn" onclick="bookmarkCurrentQ()" title="Bookmark this question"
+                style="background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 1rem; transition: color 0.3s; margin-bottom: 10px;"
+                onmouseover="this.style.color='#fbbf24'" onmouseout="if(!this.classList.contains('done'))this.style.color='rgba(255,255,255,0.3)'">
+                <i class="far fa-bookmark"></i> Bookmark
+            </button>
 
             <label class="form-label mt-3" style="color: rgba(255,255,255,0.7);">Your Spoken Answer</label>
             <textarea id="speechText" class="form-control" rows="6" placeholder="Click Start and speak..."
@@ -49,6 +55,14 @@ let isRecording = false;
 function loadQuestion() {
     document.getElementById("questionText").innerText = questions[currentIndex];
     document.getElementById("questionCounter").innerText = `Question ${currentIndex + 1} of ${questions.length}`;
+
+    // Reset bookmark button
+    const bmBtn = document.getElementById('bookmarkBtn');
+    if (bmBtn) {
+        bmBtn.querySelector('i').className = 'far fa-bookmark';
+        bmBtn.style.color = 'rgba(255,255,255,0.3)';
+        bmBtn.classList.remove('done');
+    }
 
     const nextBtn = document.getElementById("nextBtn");
     if (currentIndex === questions.length - 1) {
@@ -96,6 +110,28 @@ function nextQuestion() {
     else submitAll();
 }
 
+function bookmarkCurrentQ() {
+    const q = questions[currentIndex];
+    fetch('/bookmarks/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q, answer: '', topic: "{{ topic }}", source: 'voice' })
+    })
+    .then(res => res.json())
+    .then(() => {
+        const btn = document.getElementById('bookmarkBtn');
+        btn.querySelector('i').className = 'fas fa-bookmark';
+        btn.style.color = '#fbbf24';
+        btn.classList.add('done');
+    });
+}
+
+function esc(text) {
+    const d = document.createElement('div');
+    d.textContent = String(text);
+    return d.innerHTML;
+}
+
 function submitAll() {
     document.getElementById("statusText").innerText = "Evaluating your answers...";
     fetch("/voice-evaluate", {
@@ -105,24 +141,60 @@ function submitAll() {
     })
     .then(res => res.json())
     .then(data => {
-        let parsed = JSON.parse(data.evaluation);
+        let raw = data.evaluation;
+        // Strip markdown code fences if present
+        if (raw.startsWith('```')) {
+            raw = raw.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+        }
+        let parsed = JSON.parse(raw);
         document.getElementById("practiceSection").style.display = "none";
         document.getElementById("statusText").innerText = "";
 
-        let html = `<div class="text-center"><h3 style="color: white;">Result</h3><h4 style="color: #60a5fa;">Overall Score: ${parsed.overall_score}/10</h4></div>`;
-        parsed.results.forEach((item, index) => {
-            html += `<div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; margin-top: 12px;">
-                <h6 style="color: white;">Question ${index + 1}</h6>
-                <p style="color: rgba(255,255,255,0.7);"><strong>Score:</strong> ${item.score}/10</p>
-                <p style="color: rgba(255,255,255,0.7);"><strong>Strengths:</strong><br>- ${item.strengths.join("<br>- ")}</p>
-                <p style="color: rgba(255,255,255,0.7);"><strong>Improvements:</strong><br>- ${item.improvements.join("<br>- ")}</p>
-            </div>`;
+        const resultDiv = document.getElementById("resultSection");
+        resultDiv.innerHTML = '';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'text-center';
+        header.innerHTML = `<h3 style="color: white;">Result</h3><h4 style="color: #60a5fa;">Overall Score: ${esc(parsed.overall_score)}/10</h4>`;
+        resultDiv.appendChild(header);
+
+        // Per-question results
+        (parsed.results || []).forEach((item, index) => {
+            const card = document.createElement('div');
+            card.style.cssText = 'background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; margin-top: 12px;';
+
+            const h6 = document.createElement('h6');
+            h6.style.color = 'white';
+            h6.textContent = `Question ${index + 1}`;
+            card.appendChild(h6);
+
+            const scoreP = document.createElement('p');
+            scoreP.style.color = 'rgba(255,255,255,0.7)';
+            scoreP.innerHTML = `<strong>Score:</strong> ${esc(item.score)}/10`;
+            card.appendChild(scoreP);
+
+            const strP = document.createElement('p');
+            strP.style.color = 'rgba(255,255,255,0.7)';
+            strP.innerHTML = '<strong>Strengths:</strong><br>' + (item.strengths || []).map(s => '- ' + esc(s)).join('<br>');
+            card.appendChild(strP);
+
+            const impP = document.createElement('p');
+            impP.style.color = 'rgba(255,255,255,0.7)';
+            impP.innerHTML = '<strong>Improvements:</strong><br>' + (item.improvements || []).map(s => '- ' + esc(s)).join('<br>');
+            card.appendChild(impP);
+
+            resultDiv.appendChild(card);
         });
-        html += `<div class="text-center mt-4">
+
+        // Buttons
+        const btns = document.createElement('div');
+        btns.className = 'text-center mt-4';
+        btns.innerHTML = `
             <a href="/voice?topic={{ topic }}&count=${questions.length}" style="padding: 10px 22px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; margin-right: 10px;">Try Again</a>
             <a href="/mode" style="padding: 10px 22px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); text-decoration: none; border-radius: 50px; font-weight: 600;">Back to Modes</a>
-        </div>`;
-        document.getElementById("resultSection").innerHTML = html;
+        `;
+        resultDiv.appendChild(btns);
     })
     .catch(() => alert("Evaluation failed. Please try again."));
 }

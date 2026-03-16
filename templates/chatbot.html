@@ -94,6 +94,27 @@ function setTopic(el, topic) {
     el.classList.add('active');
 }
 
+function createMsgElement(type, content, isHtml) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'chat-msg ' + type;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'chat-avatar';
+    avatar.innerHTML = type === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+    if (isHtml) {
+        bubble.innerHTML = content;
+    } else {
+        bubble.textContent = content;
+    }
+
+    wrapper.appendChild(avatar);
+    wrapper.appendChild(bubble);
+    return wrapper;
+}
+
 function sendMessage() {
     const input = document.getElementById('chatInput');
     const msg = input.value.trim();
@@ -101,13 +122,8 @@ function sendMessage() {
 
     const chatMessages = document.getElementById('chatMessages');
 
-    // Add user message
-    chatMessages.innerHTML += `
-        <div class="chat-msg user">
-            <div class="chat-avatar"><i class="fas fa-user"></i></div>
-            <div class="chat-bubble">${escapeHtml(msg)}</div>
-        </div>
-    `;
+    // Add user message (safe textContent)
+    chatMessages.appendChild(createMsgElement('user', msg, false));
 
     input.value = '';
     document.getElementById('sendBtn').disabled = true;
@@ -119,28 +135,21 @@ function sendMessage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: msg, topic: currentTopic })
     })
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) return res.json().then(d => { throw new Error(d.error || 'Request failed'); });
+        return res.json();
+    })
     .then(data => {
         document.getElementById('typingIndicator').classList.remove('show');
         document.getElementById('sendBtn').disabled = false;
 
-        chatMessages.innerHTML += `
-            <div class="chat-msg ai">
-                <div class="chat-avatar"><i class="fas fa-robot"></i></div>
-                <div class="chat-bubble">${formatResponse(data.response)}</div>
-            </div>
-        `;
+        chatMessages.appendChild(createMsgElement('ai', formatResponse(data.response), true));
         chatMessages.scrollTop = chatMessages.scrollHeight;
     })
-    .catch(() => {
+    .catch((err) => {
         document.getElementById('typingIndicator').classList.remove('show');
         document.getElementById('sendBtn').disabled = false;
-        chatMessages.innerHTML += `
-            <div class="chat-msg ai">
-                <div class="chat-avatar"><i class="fas fa-robot"></i></div>
-                <div class="chat-bubble">Sorry, something went wrong. Please try again.</div>
-            </div>
-        `;
+        chatMessages.appendChild(createMsgElement('ai', err.message || 'Sorry, something went wrong. Please try again.', false));
     });
 }
 
@@ -151,7 +160,7 @@ function escapeHtml(text) {
 }
 
 function formatResponse(text) {
-    // Basic markdown-like formatting
+    // Escape HTML first to prevent XSS, then apply safe formatting
     text = escapeHtml(text);
     text = text.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
     text = text.replace(/`([^`]+)`/g, '<code>$1</code>');

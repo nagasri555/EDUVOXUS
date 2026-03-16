@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}EduVoxus | Flashcards{% endblock %}
+
+{% block head %}
+<style>
+    .fc-container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+    .fc-header { text-align: center; margin-bottom: 30px; }
+    .fc-header h1 { color: white; font-size: 2rem; font-weight: 700; }
+    .fc-header p { color: rgba(255,255,255,0.6); }
+    .fc-generate { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 25px; backdrop-filter: blur(12px); margin-bottom: 30px; }
+    .fc-generate h3 { color: white; font-size: 1.2rem; font-weight: 600; margin-bottom: 15px; }
+    .fc-form { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+    .fc-form input, .fc-form select { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 10px 16px; color: white; outline: none; font-size: 0.95rem; }
+    .fc-form input::placeholder { color: rgba(255,255,255,0.3); }
+    .fc-form select option { background: #1e1e2f; color: white; }
+    .fc-form input { flex: 1; min-width: 200px; }
+    .fc-gen-btn { padding: 10px 24px; background: linear-gradient(135deg, #9333ea, #7e22ce); color: white; border: none; border-radius: 50px; font-weight: 600; cursor: pointer; transition: all 0.3s; white-space: nowrap; }
+    .fc-gen-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(147,51,234,0.4); }
+    .deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+    .deck-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 22px; transition: all 0.3s; position: relative; }
+    .deck-card:hover { transform: translateY(-4px); background: rgba(255,255,255,0.05); border-color: rgba(192,132,252,0.3); }
+    .deck-topic { color: #60a5fa; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .deck-title { color: white; font-size: 1.1rem; font-weight: 600; margin-bottom: 10px; }
+    .deck-meta { color: rgba(255,255,255,0.4); font-size: 0.85rem; margin-bottom: 15px; }
+    .deck-actions { display: flex; gap: 10px; }
+    .deck-study-btn { flex: 1; padding: 8px; text-align: center; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; font-size: 0.85rem; transition: all 0.3s; }
+    .deck-study-btn:hover { color: white; transform: translateY(-1px); }
+    .deck-del-btn { padding: 8px 14px; background: rgba(239,68,68,0.15); color: #ef4444; border: none; border-radius: 50px; font-size: 0.85rem; cursor: pointer; transition: all 0.3s; }
+    .deck-del-btn:hover { background: rgba(239,68,68,0.25); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fc-container">
+    <div class="fc-header">
+        <h1><i class="fas fa-layer-group" style="color: #c084fc;"></i> AI Flashcards</h1>
+        <p>Generate flashcard decks on any topic with AI-powered spaced repetition</p>
+    </div>
+
+    <div class="fc-generate">
+        <h3><i class="fas fa-magic" style="color: #c084fc;"></i> Generate New Deck</h3>
+        <form method="POST" action="/flashcards/generate" class="fc-form">
+            <input type="text" name="topic" placeholder="Enter topic (e.g. Data Structures, SQL)" required>
+            <select name="count">
+                <option value="5">5 Cards</option>
+                <option value="10" selected>10 Cards</option>
+                <option value="15">15 Cards</option>
+                <option value="20">20 Cards</option>
+            </select>
+            <button type="submit" class="fc-gen-btn"><i class="fas fa-bolt"></i> Generate</button>
+        </form>
+    </div>
+
+    {% if decks %}
+    <h3 style="color: white; font-size: 1.2rem; font-weight: 600; margin-bottom: 15px;">
+        <i class="fas fa-folder" style="color: #60a5fa;"></i> Your Decks ({{ decks | length }})
+    </h3>
+    <div class="deck-grid">
+        {% for deck in decks %}
+        <div class="deck-card">
+            <div class="deck-topic">{{ deck.topic }}</div>
+            <div class="deck-title">{{ deck.title }}</div>
+            <div class="deck-meta">
+                <i class="fas fa-clone"></i> {{ deck.cards | length }} cards |
+                <i class="fas fa-calendar"></i> {{ deck.created_at.strftime("%b %d") }}
+            </div>
+            <div class="deck-actions">
+                <a href="/flashcards/{{ deck.id }}" class="deck-study-btn"><i class="fas fa-play"></i> Study</a>
+                <form method="POST" action="/flashcards/{{ deck.id }}/delete" style="display: inline;">
+                    <button type="submit" class="deck-del-btn" onclick="return confirm('Delete this deck?')"><i class="fas fa-trash"></i></button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.4);">
+        <i class="fas fa-layer-group" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
+        <p>No flashcard decks yet. Generate your first one above!</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
