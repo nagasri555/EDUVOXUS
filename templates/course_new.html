@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}EduVoxus | Create Course{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 40px auto; padding: 0 20px;">
+    <h1 style="color: white; font-size: 2rem; font-weight: 700; margin-bottom: 25px;">
+        <i class="fas fa-plus-circle"></i> Create New Course
+    </h1>
+
+    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; backdrop-filter: blur(12px);">
+        <form method="POST">
+            <div style="margin-bottom: 20px;">
+                <label style="color: rgba(255,255,255,0.8); font-weight: 600; display: block; margin-bottom: 8px;">Course Title</label>
+                <input type="text" name="title" required placeholder="e.g., Database Management Systems"
+                    style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 16px; color: white; font-size: 1rem; outline: none;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="color: rgba(255,255,255,0.8); font-weight: 600; display: block; margin-bottom: 8px;">Category</label>
+                <select name="category"
+                    style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 16px; color: white; font-size: 1rem; outline: none;">
+                    <option value="Computer Science" style="background: #1e1e2f;">Computer Science</option>
+                    <option value="Mathematics" style="background: #1e1e2f;">Mathematics</option>
+                    <option value="Data Science" style="background: #1e1e2f;">Data Science</option>
+                    <option value="Web Development" style="background: #1e1e2f;">Web Development</option>
+                    <option value="AI & ML" style="background: #1e1e2f;">AI & ML</option>
+                    <option value="General" style="background: #1e1e2f;">General</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="color: rgba(255,255,255,0.8); font-weight: 600; display: block; margin-bottom: 8px;">Description</label>
+                <textarea name="description" required rows="4" placeholder="Describe what this course covers..."
+                    style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 16px; color: white; font-size: 1rem; outline: none; resize: vertical;"></textarea>
+            </div>
+
+            <button type="submit"
+                style="width: 100%; padding: 14px; background: linear-gradient(135deg, #3b82f6, #9333ea); color: white; border: none; border-radius: 50px; font-weight: 600; font-size: 1rem; cursor: pointer;">
+                <i class="fas fa-check"></i> Create Course
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

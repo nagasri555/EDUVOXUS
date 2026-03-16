@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Certificate | EduVoxus{% endblock %}
+
+{% block head %}
+<style>
+    .cert-page { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 100px); padding: 20px; }
+    .cert-container { width: 900px; max-width: 100%; }
+    .certificate { background: white; border-radius: 8px; padding: 60px; position: relative; overflow: hidden; color: #1a1a2e; }
+    .cert-border { position: absolute; inset: 15px; border: 3px solid #c9a84c; border-radius: 4px; pointer-events: none; }
+    .cert-corner { position: absolute; width: 40px; height: 40px; border: 3px solid #c9a84c; }
+    .cert-corner.tl { top: 25px; left: 25px; border-right: none; border-bottom: none; }
+    .cert-corner.tr { top: 25px; right: 25px; border-left: none; border-bottom: none; }
+    .cert-corner.bl { bottom: 25px; left: 25px; border-right: none; border-top: none; }
+    .cert-corner.br { bottom: 25px; right: 25px; border-left: none; border-top: none; }
+    .cert-header { text-align: center; margin-bottom: 30px; }
+    .cert-logo { font-size: 1.8rem; font-weight: 800; color: #1a1a2e; letter-spacing: 2px; }
+    .cert-subtitle { font-size: 0.9rem; color: #666; text-transform: uppercase; letter-spacing: 3px; margin-top: 5px; }
+    .cert-title { text-align: center; font-size: 2.5rem; font-weight: 300; color: #c9a84c; margin: 20px 0; font-family: 'Georgia', serif; }
+    .cert-body { text-align: center; }
+    .cert-presented { font-size: 1rem; color: #666; margin-bottom: 10px; }
+    .cert-name { font-size: 2rem; font-weight: 700; color: #1a1a2e; border-bottom: 2px solid #c9a84c; display: inline-block; padding-bottom: 5px; margin-bottom: 15px; }
+    .cert-topic { font-size: 1.1rem; color: #444; margin-bottom: 5px; }
+    .cert-score { font-size: 1.5rem; font-weight: 700; color: #c9a84c; margin: 10px 0; }
+    .cert-date { font-size: 0.9rem; color: #888; margin-top: 20px; }
+    .cert-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; }
+    .cert-sign { text-align: center; }
+    .cert-sign-line { width: 180px; border-top: 1px solid #999; margin-bottom: 5px; }
+    .cert-sign-label { font-size: 0.8rem; color: #888; }
+    .cert-id { font-size: 0.75rem; color: #aaa; text-align: center; margin-top: 15px; }
+    .cert-actions { text-align: center; margin-top: 20px; }
+    .cert-actions button, .cert-actions a { padding: 12px 28px; border-radius: 50px; font-weight: 600; cursor: pointer; margin: 0 8px; text-decoration: none; display: inline-block; }
+    .print-btn { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; }
+    .back-btn { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
+    @media print {
+        body { background: white !important; }
+        .navbar, .cert-actions, .glow-orb { display: none !important; }
+        .cert-page { min-height: auto; padding: 0; }
+        .certificate { box-shadow: none; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cert-page">
+    <div class="cert-container">
+        <div class="certificate" id="certificate">
+            <div class="cert-border"></div>
+            <div class="cert-corner tl"></div>
+            <div class="cert-corner tr"></div>
+            <div class="cert-corner bl"></div>
+            <div class="cert-corner br"></div>
+
+            <div class="cert-header">
+                <div class="cert-logo">EDUVOXUS</div>
+                <div class="cert-subtitle">AI-Powered Learning Platform</div>
+            </div>
+
+            <div class="cert-title">Certificate of Achievement</div>
+
+            <div class="cert-body">
+                <p class="cert-presented">This is to certify that</p>
+                <div class="cert-name">{{ user.name }}</div>
+                <p class="cert-topic">has successfully demonstrated proficiency in</p>
+                <p style="font-size: 1.4rem; font-weight: 600; color: #1a1a2e;">{{ result.topic }}</p>
+                <div class="cert-score">Score: {{ result.score }}/10</div>
+                <p class="cert-date">Date: {{ result.date.strftime("%B %d, %Y") }}</p>
+            </div>
+
+            <div class="cert-footer">
+                <div class="cert-sign">
+                    <div class="cert-sign-line"></div>
+                    <div class="cert-sign-label">EduVoxus Platform</div>
+                </div>
+                <div class="cert-sign">
+                    <div class="cert-sign-line"></div>
+                    <div class="cert-sign-label">AI Verification</div>
+                </div>
+            </div>
+
+            <div class="cert-id">Certificate ID: EDVX-{{ result.id }}-{{ result.date.strftime("%Y%m%d") }}-{{ user.id }}</div>
+        </div>
+
+        <div class="cert-actions">
+            <button class="print-btn" onclick="window.print()">
+                <i class="fas fa-print"></i> Print Certificate
+            </button>
+            <a href="/dashboard" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

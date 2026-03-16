@@ -1478,3 +1478,68 @@ h1 {
         margin-bottom: 10px;
     }
 }
+
+/* ===== GLOWING ORBS (Background Effects) ===== */
+.glow-orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.orb1 {
+    width: 400px;
+    height: 400px;
+    background: #3b82f6;
+    top: -100px;
+    right: -100px;
+    animation: floatOrb 8s ease-in-out infinite;
+}
+
+.orb2 {
+    width: 350px;
+    height: 350px;
+    background: #9333ea;
+    bottom: -100px;
+    left: -100px;
+    animation: floatOrb 10s ease-in-out infinite reverse;
+}
+
+@keyframes floatOrb {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(30px, -30px); }
+}
+
+/* ===== NAV USER BADGE ===== */
+.nav-user-badge {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-points {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+    padding: 2px 8px;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* ===== MODE GRID 4 COLUMNS ===== */
+@media (max-width: 1024px) {
+    .mode-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .mode-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}

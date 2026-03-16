@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}EduVoxus | Discussion Forum{% endblock %}
+
+{% block head %}
+<style>
+    .forum-container { max-width: 1000px; margin: 20px auto; padding: 0 20px; }
+    .forum-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px; }
+    .forum-header h1 { font-size: 2rem; font-weight: 700; color: white; }
+    .new-post-btn { padding: 10px 24px; background: linear-gradient(135deg, #3b82f6, #9333ea); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; transition: all 0.3s; }
+    .new-post-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(96,165,250,0.4); color: white; }
+    .forum-filters { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .forum-search { flex: 1; min-width: 200px; }
+    .forum-search input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; padding: 10px 20px; color: white; outline: none; }
+    .forum-search input::placeholder { color: rgba(255,255,255,0.3); }
+    .topic-filter { display: flex; gap: 8px; flex-wrap: wrap; }
+    .topic-tag { padding: 6px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; color: rgba(255,255,255,0.7); font-size: 0.85rem; cursor: pointer; text-decoration: none; transition: all 0.3s; }
+    .topic-tag:hover, .topic-tag.active { background: linear-gradient(135deg, #3b82f6, #9333ea); color: white; border-color: transparent; }
+    .post-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; margin-bottom: 12px; transition: all 0.3s; cursor: pointer; text-decoration: none; display: block; backdrop-filter: blur(12px); }
+    .post-card:hover { background: rgba(255,255,255,0.06); border-color: rgba(96,165,250,0.3); transform: translateX(4px); }
+    .post-title { font-size: 1.1rem; font-weight: 600; color: white; margin-bottom: 6px; }
+    .post-meta { display: flex; gap: 15px; color: rgba(255,255,255,0.5); font-size: 0.85rem; flex-wrap: wrap; }
+    .post-meta i { margin-right: 4px; }
+    .post-topic { display: inline-block; padding: 3px 10px; background: rgba(96,165,250,0.15); color: #60a5fa; border-radius: 50px; font-size: 0.8rem; font-weight: 600; }
+    .post-preview { color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 8px; line-height: 1.5; }
+    .reply-count { color: #c084fc; font-weight: 600; }
+    .pagination-area { display: flex; justify-content: center; gap: 8px; margin-top: 25px; }
+    .page-link-custom { padding: 8px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; text-decoration: none; transition: all 0.3s; }
+    .page-link-custom:hover, .page-link-custom.active { background: linear-gradient(135deg, #3b82f6, #9333ea); color: white; }
+    .empty-forum { text-align: center; padding: 60px; color: rgba(255,255,255,0.4); }
+    .empty-forum i { font-size: 3rem; margin-bottom: 15px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="forum-container">
+    <div class="forum-header">
+        <h1><i class="fas fa-comments"></i> Discussion Forum</h1>
+        <a href="/forum/new" class="new-post-btn"><i class="fas fa-plus"></i> New Post</a>
+    </div>
+
+    <div class="forum-filters">
+        <div class="forum-search">
+            <form method="get">
+                <input type="text" name="search" placeholder="Search discussions..." value="{{ search }}">
+            </form>
+        </div>
+    </div>
+
+    <div class="topic-filter">
+        <a href="/forum" class="topic-tag {{ 'active' if not current_topic }}">All</a>
+        {% for t in topics %}
+        <a href="/forum?topic={{ t }}" class="topic-tag {{ 'active' if current_topic == t }}">{{ t }}</a>
+        {% endfor %}
+    </div>
+
+    <div style="margin-top: 20px;">
+        {% for post in posts.items %}
+        <a href="/forum/post/{{ post.id }}" class="post-card">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div>
+                    <div class="post-title">{{ post.title }}</div>
+                    <div class="post-preview">{{ post.content[:150] }}{% if post.content|length > 150 %}...{% endif %}</div>
+                </div>
+                <span class="post-topic">{{ post.topic }}</span>
+            </div>
+            <div class="post-meta" style="margin-top: 10px;">
+                <span><i class="fas fa-user"></i> {{ post.author.name }}</span>
+                <span><i class="fas fa-clock"></i> {{ post.created_at.strftime("%b %d, %Y") }}</span>
+                <span class="reply-count"><i class="fas fa-comment"></i> {{ post.replies | length }} replies</span>
+            </div>
+        </a>
+        {% endfor %}
+
+        {% if not posts.items %}
+        <div class="empty-forum">
+            <i class="fas fa-comment-slash"></i>
+            <p>No discussions yet. Be the first to start one!</p>
+            <a href="/forum/new" class="new-post-btn"><i class="fas fa-plus"></i> Create Post</a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if posts.pages > 1 %}
+    <div class="pagination-area">
+        {% if posts.has_prev %}
+        <a href="/forum?page={{ posts.prev_num }}&topic={{ current_topic }}" class="page-link-custom">&laquo; Prev</a>
+        {% endif %}
+        {% for p in posts.iter_pages() %}
+            {% if p %}
+            <a href="/forum?page={{ p }}&topic={{ current_topic }}" class="page-link-custom {{ 'active' if p == posts.page }}">{{ p }}</a>
+            {% endif %}
+        {% endfor %}
+        {% if posts.has_next %}
+        <a href="/forum?page={{ posts.next_num }}&topic={{ current_topic }}" class="page-link-custom">Next &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,122 +1,120 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About EduVoxus | AI-Powered Learning</title>
+{% extends "base.html" %}
+{% block title %}About EduVoxus | AI-Powered Learning{% endblock %}
 
-    <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-
-<body class="about-bg">
-    <!-- NAVBAR (EXACTLY SAME AS INDEX) -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <a class="navbar-brand fw-bold fs-4" href="/">EduVoxus</a>
-
-        <div class="ms-auto">
-            <a class="nav-link d-inline mx-3" href="/">Home</a>
-            <a class="nav-link d-inline mx-3" href="/about">About</a>
-            <a class="nav-link d-inline mx-3" href="/dashboard">Dashboard</a>
-            <a class="nav-link d-inline mx-3" href="/contact">Contact</a>
-        </div>
-    </nav>
-
+{% block content %}
     <div class="container-main">
-        <!-- HERO SECTION -->
         <div class="about-hero">
             <h1>About EduVoxus</h1>
-
-            <p class="about-hero-sub">
-                Transforming traditional learning into smart, interactive experiences
-            </p>
-
+            <p class="about-hero-sub">Transforming traditional learning into smart, interactive experiences</p>
             <p class="about-hero-desc">
-                EduVoxus is an AI-powered learning platform designed to make studying
-                more interactive, engaging and effective. Students learn through quizzes,
-                descriptive questions and voice-based practice instead of passive reading.
+                EduVoxus is an AI-powered learning platform designed to make studying more interactive, engaging and effective.
+                Students learn through quizzes, descriptive questions, voice-based practice, AI doubt solving,
+                discussion forums, and structured courses - all with real-time performance tracking and gamification.
             </p>
         </div>
 
-        <!-- FEATURES SECTION -->
-        <h2 class="about-section-title">Our Key Features</h2>
-
-        <p class="about-section-sub">
-            Discover what makes EduVoxus the future of learning
-        </p>
+        <h2 class="about-section-title">Platform Features</h2>
+        <p class="about-section-sub">Everything you need for smart, effective learning</p>
 
         <div class="row g-4 mb-5">
             <div class="col-md-6 col-lg-4">
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-robot"></i></div>
-                    <div class="feature-title">AI-Powered Question Generation</div>
-                    <div class="feature-text">
-                        Automatically generates descriptive questions based on selected topics.
-                    </div>
+                    <div class="feature-title">AI Question Generation</div>
+                    <div class="feature-text">Dynamically generates questions on any topic using GPT-4. No pre-loaded content needed.</div>
                 </div>
             </div>
-
             <div class="col-md-6 col-lg-4">
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-puzzle-piece"></i></div>
                     <div class="feature-title">Interactive Quiz Mode</div>
-                    <div class="feature-text">
-                        Students can attempt quizzes, submit answers and instantly view results.
-                    </div>
+                    <div class="feature-text">MCQ quizzes with instant scoring, answer review, and performance tracking.</div>
                 </div>
             </div>
-
             <div class="col-md-6 col-lg-4">
                 <div class="feature-card">
                     <div class="feature-icon"><i class="fas fa-microphone"></i></div>
-                    <div class="feature-title">Voice-Based Learning</div>
-                    <div class="feature-text">
-                        Practice topics using voice input to improve speaking confidence.
-                    </div>
+                    <div class="feature-title">Voice-Based Practice</div>
+                    <div class="feature-text">Practice speaking with browser speech recognition and AI evaluation of answers.</div>
                 </div>
             </div>
-
             <div class="col-md-6 col-lg-4">
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-bolt"></i></div>
-                    <div class="feature-title">Instant Feedback</div>
-                    <div class="feature-text">
-                        Receive real-time evaluation to improve learning performance.
-                    </div>
+                    <div class="feature-icon"><i class="fas fa-comment-dots"></i></div>
+                    <div class="feature-title">AI Tutor Chatbot</div>
+                    <div class="feature-text">Ask any doubt and get instant, clear AI-powered explanations and solutions.</div>
                 </div>
             </div>
-
             <div class="col-md-6 col-lg-4">
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-user-graduate"></i></div>
-                    <div class="feature-title">Personalized Learning</div>
-                    <div class="feature-text">
-                        Choose topics, question counts and learning modes according to needs.
-                    </div>
+                    <div class="feature-icon"><i class="fas fa-trophy"></i></div>
+                    <div class="feature-title">Gamification & Leaderboard</div>
+                    <div class="feature-text">Earn points, badges, maintain streaks and compete on the leaderboard.</div>
                 </div>
             </div>
-
             <div class="col-md-6 col-lg-4">
                 <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
-                    <div class="feature-title">Responsive UI</div>
-                    <div class="feature-text">
-                        Clean and mobile-friendly interface designed for students.
-                    </div>
+                    <div class="feature-icon"><i class="fas fa-comments"></i></div>
+                    <div class="feature-title">Discussion Forum</div>
+                    <div class="feature-text">Ask questions, share knowledge, and get AI-powered answers in the community.</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-graduation-cap"></i></div>
+                    <div class="feature-title">Course Management</div>
+                    <div class="feature-text">Structured courses with study material uploads, managed by teachers and admins.</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-certificate"></i></div>
+                    <div class="feature-title">Certificate Generation</div>
+                    <div class="feature-text">Earn printable certificates for high scores to showcase your achievements.</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                    <div class="feature-title">Adaptive Analytics</div>
+                    <div class="feature-text">Track performance, identify weak topics, and get personalized recommendations.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tech Stack Section -->
+        <h2 class="about-section-title">Technology Stack</h2>
+        <p class="about-section-sub">Built with modern, scalable technologies</p>
+
+        <div class="row g-4 mb-5" style="max-width: 800px; margin: 0 auto;">
+            <div class="col-6 col-md-3 text-center">
+                <div class="feature-card" style="padding: 20px;">
+                    <div class="feature-icon"><i class="fab fa-python"></i></div>
+                    <div class="feature-title" style="font-size: 1rem;">Flask</div>
+                    <div class="feature-text">Backend</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 text-center">
+                <div class="feature-card" style="padding: 20px;">
+                    <div class="feature-icon"><i class="fas fa-brain"></i></div>
+                    <div class="feature-title" style="font-size: 1rem;">OpenAI</div>
+                    <div class="feature-text">AI Engine</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 text-center">
+                <div class="feature-card" style="padding: 20px;">
+                    <div class="feature-icon"><i class="fas fa-database"></i></div>
+                    <div class="feature-title" style="font-size: 1rem;">SQLite</div>
+                    <div class="feature-text">Database</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 text-center">
+                <div class="feature-card" style="padding: 20px;">
+                    <div class="feature-icon"><i class="fab fa-bootstrap"></i></div>
+                    <div class="feature-title" style="font-size: 1rem;">Bootstrap</div>
+                    <div class="feature-text">Frontend</div>
                 </div>
             </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}

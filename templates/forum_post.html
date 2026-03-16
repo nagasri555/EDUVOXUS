@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} | EduVoxus Forum{% endblock %}
+
+{% block head %}
+<style>
+    .fp-container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+    .fp-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; backdrop-filter: blur(12px); margin-bottom: 20px; }
+    .fp-title { font-size: 1.5rem; font-weight: 700; color: white; margin-bottom: 10px; }
+    .fp-topic { display: inline-block; padding: 4px 12px; background: rgba(96,165,250,0.15); color: #60a5fa; border-radius: 50px; font-size: 0.8rem; font-weight: 600; margin-bottom: 15px; }
+    .fp-content { color: rgba(255,255,255,0.8); line-height: 1.7; font-size: 1rem; }
+    .fp-meta { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
+    .replies-section h3 { color: white; font-size: 1.2rem; font-weight: 600; margin-bottom: 15px; }
+    .reply-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    .reply-card.ai-reply { border-color: rgba(192,132,252,0.3); background: rgba(192,132,252,0.05); }
+    .reply-author { font-weight: 600; color: white; font-size: 0.9rem; }
+    .reply-content { color: rgba(255,255,255,0.8); margin-top: 8px; line-height: 1.6; }
+    .reply-time { color: rgba(255,255,255,0.4); font-size: 0.8rem; margin-top: 8px; }
+    .ai-badge { display: inline-block; padding: 2px 8px; background: linear-gradient(135deg, #9333ea, #7e22ce); color: white; border-radius: 50px; font-size: 0.75rem; font-weight: 600; margin-left: 8px; }
+    .reply-form { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; margin-top: 20px; }
+    .reply-form textarea { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; color: white; font-size: 0.95rem; outline: none; resize: vertical; min-height: 80px; }
+    .reply-form textarea::placeholder { color: rgba(255,255,255,0.3); }
+    .reply-actions { display: flex; gap: 10px; margin-top: 12px; }
+    .reply-btn { padding: 10px 22px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 50px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+    .reply-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(59,130,246,0.4); }
+    .ai-answer-btn { padding: 10px 22px; background: linear-gradient(135deg, #9333ea, #7e22ce); color: white; border: none; border-radius: 50px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+    .ai-answer-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(147,51,234,0.4); }
+    .ai-answer-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fp-container">
+    <a href="/forum" style="color: rgba(255,255,255,0.5); text-decoration: none; display: inline-block; margin-bottom: 15px;">
+        <i class="fas fa-arrow-left"></i> Back to Forum
+    </a>
+
+    <div class="fp-card">
+        <span class="fp-topic">{{ post.topic }}</span>
+        <h1 class="fp-title">{{ post.title }}</h1>
+        <div class="fp-content">{{ post.content }}</div>
+        <div class="fp-meta">
+            <i class="fas fa-user"></i> {{ post.author.name }} &nbsp;|&nbsp;
+            <i class="fas fa-clock"></i> {{ post.created_at.strftime("%b %d, %Y at %I:%M %p") }}
+        </div>
+    </div>
+
+    <div class="replies-section">
+        <h3><i class="fas fa-comments"></i> Replies ({{ post.replies | length }})</h3>
+
+        {% for reply in post.replies %}
+        <div class="reply-card {{ 'ai-reply' if reply.is_ai }}">
+            <div>
+                <span class="reply-author">
+                    {% if reply.is_ai %}
+                    <i class="fas fa-robot" style="color: #c084fc;"></i> AI Tutor
+                    <span class="ai-badge">AI Generated</span>
+                    {% else %}
+                    <i class="fas fa-user" style="color: #60a5fa;"></i> {{ reply.author.name }}
+                    {% endif %}
+                </span>
+            </div>
+            <div class="reply-content">{{ reply.content }}</div>
+            <div class="reply-time">{{ reply.created_at.strftime("%b %d, %Y at %I:%M %p") }}</div>
+        </div>
+        {% endfor %}
+
+        {% if not post.replies %}
+        <div style="text-align: center; padding: 30px; color: rgba(255,255,255,0.4);">
+            <p>No replies yet. Be the first to answer!</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="reply-form">
+        <form method="POST">
+            <textarea name="content" placeholder="Write your reply..." required></textarea>
+            <div class="reply-actions">
+                <button type="submit" class="reply-btn"><i class="fas fa-reply"></i> Post Reply</button>
+                <button type="button" class="ai-answer-btn" id="aiAnswerBtn" onclick="getAiAnswer()">
+                    <i class="fas fa-robot"></i> Get AI Answer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function getAiAnswer() {
+    const btn = document.getElementById('aiAnswerBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI is thinking...';
+
+    fetch('/forum/post/{{ post.id }}/ai-answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(data => {
+        location.reload();
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-robot"></i> Get AI Answer';
+        alert('Failed to get AI answer. Please try again.');
+    });
+}
+</script>
+{% endblock %}

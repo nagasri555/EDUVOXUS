@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}{{ course.title }} | EduVoxus{% endblock %}
+
+{% block head %}
+<style>
+    .cd-container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+    .cd-header { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; backdrop-filter: blur(12px); margin-bottom: 25px; }
+    .cd-title { font-size: 1.8rem; font-weight: 700; color: white; margin-bottom: 8px; }
+    .cd-cat { display: inline-block; padding: 4px 14px; background: rgba(96,165,250,0.15); color: #60a5fa; border-radius: 50px; font-size: 0.85rem; font-weight: 600; margin-bottom: 12px; }
+    .cd-desc { color: rgba(255,255,255,0.7); line-height: 1.6; }
+    .cd-meta { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-top: 15px; }
+    .materials-section { margin-top: 25px; }
+    .materials-section h2 { color: white; font-size: 1.3rem; font-weight: 600; margin-bottom: 15px; }
+    .material-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; }
+    .material-item:hover { background: rgba(255,255,255,0.05); }
+    .material-info h4 { color: white; font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+    .material-info p { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin: 0; }
+    .file-badge { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+    .file-pdf { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .file-doc { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .file-img { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .file-other { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+    .download-btn { padding: 8px 16px; background: rgba(96,165,250,0.15); color: #60a5fa; border: none; border-radius: 50px; font-weight: 600; font-size: 0.85rem; cursor: pointer; text-decoration: none; transition: all 0.3s; }
+    .download-btn:hover { background: rgba(96,165,250,0.25); color: #60a5fa; }
+    .upload-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; margin-top: 20px; }
+    .upload-section h3 { color: white; font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cd-container">
+    <a href="/courses" style="color: rgba(255,255,255,0.5); text-decoration: none; display: inline-block; margin-bottom: 15px;">
+        <i class="fas fa-arrow-left"></i> Back to Courses
+    </a>
+
+    <div class="cd-header">
+        <span class="cd-cat">{{ course.category or 'General' }}</span>
+        <h1 class="cd-title">{{ course.title }}</h1>
+        <p class="cd-desc">{{ course.description }}</p>
+        <div class="cd-meta">
+            <i class="fas fa-user"></i> Created by {{ course.creator.name if course.creator else 'Admin' }} &nbsp;|&nbsp;
+            <i class="fas fa-calendar"></i> {{ course.created_at.strftime("%b %d, %Y") }} &nbsp;|&nbsp;
+            <i class="fas fa-file"></i> {{ materials | length }} materials
+        </div>
+    </div>
+
+    <div class="materials-section">
+        <h2><i class="fas fa-folder-open" style="color: #60a5fa;"></i> Study Materials</h2>
+
+        {% for m in materials %}
+        <div class="material-item">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <span class="file-badge {% if m.file_type == 'pdf' %}file-pdf{% elif m.file_type in ['doc','docx'] %}file-doc{% elif m.file_type in ['png','jpg','jpeg'] %}file-img{% else %}file-other{% endif %}">
+                    {{ m.file_type }}
+                </span>
+                <div class="material-info">
+                    <h4>{{ m.title }}</h4>
+                    <p>{{ m.description or 'No description' }} | Uploaded {{ m.uploaded_at.strftime("%b %d") }}</p>
+                </div>
+            </div>
+            <a href="/download/{{ m.file_path }}" class="download-btn">
+                <i class="fas fa-download"></i> Download
+            </a>
+        </div>
+        {% endfor %}
+
+        {% if not materials %}
+        <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.4);">
+            <i class="fas fa-folder-open" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+            <p>No materials uploaded yet.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if current_user.role in ['admin', 'teacher'] %}
+    <div class="upload-section">
+        <h3><i class="fas fa-upload" style="color: #c084fc;"></i> Upload Material</h3>
+        <form method="POST" action="/courses/{{ course.id }}/upload" enctype="multipart/form-data">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <input type="text" name="title" required placeholder="Material title"
+                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 14px; color: white; outline: none;">
+                <input type="text" name="description" placeholder="Description (optional)"
+                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 14px; color: white; outline: none;">
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <input type="file" name="file" required
+                    style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 8px; color: white;">
+                <button type="submit"
+                    style="padding: 10px 24px; background: linear-gradient(135deg, #9333ea, #7e22ce); color: white; border: none; border-radius: 50px; font-weight: 600; cursor: pointer;">
+                    <i class="fas fa-upload"></i> Upload
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Quick Practice Section -->
+    <div style="margin-top: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 25px; text-align: center;">
+        <h3 style="color: white; font-weight: 600; margin-bottom: 8px;">Practice this topic</h3>
+        <p style="color: rgba(255,255,255,0.5); margin-bottom: 15px;">Test your knowledge on {{ course.title }}</p>
+        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <a href="/start?mode=quiz" style="padding: 10px 22px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; text-decoration: none; border-radius: 50px; font-weight: 600;">
+                <i class="fas fa-puzzle-piece"></i> Quiz
+            </a>
+            <a href="/start?mode=voice" style="padding: 10px 22px; background: linear-gradient(135deg, #9333ea, #7e22ce); color: white; text-decoration: none; border-radius: 50px; font-weight: 600;">
+                <i class="fas fa-microphone"></i> Voice
+            </a>
+            <a href="/start?mode=theory" style="padding: 10px 22px; background: linear-gradient(135deg, #db2777, #be185d); color: white; text-decoration: none; border-radius: 50px; font-weight: 600;">
+                <i class="fas fa-book"></i> Theory
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

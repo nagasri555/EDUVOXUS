@@ -1,191 +1,117 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>EduVoxus | Quiz</title>
+{% extends "base.html" %}
+{% block title %}EduVoxus | Quiz{% endblock %}
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
+{% block head %}
+<style>
+    .progress-circle { width: 160px; height: 160px; border-radius: 50%; background: conic-gradient(#3b82f6 var(--percent), rgba(255,255,255,0.1) 0deg); display: flex; align-items: center; justify-content: center; margin: auto; }
+    .progress-circle span { width: 110px; height: 110px; background: #0f172a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; color: #60a5fa; }
+    .stat-card { border-radius: 12px; padding: 12px 18px; color: white; font-weight: 600; }
+    .option-label { display: block; padding: 10px 14px; border-radius: 10px; margin-bottom: 8px; cursor: pointer; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); transition: all 0.2s; }
+    .option-label:hover { background: rgba(255,255,255,0.06); border-color: rgba(96,165,250,0.3); }
+    .option-label input { margin-right: 10px; }
+    .correct-option { background: rgba(34,197,94,0.15) !important; border: 1px solid #22c55e !important; color: #22c55e !important; }
+    .wrong-option { background: rgba(239,68,68,0.15) !important; border: 1px solid #ef4444 !important; color: #ef4444 !important; }
+    .quiz-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; backdrop-filter: blur(12px); max-width: 800px; margin: 20px auto; }
+    .quiz-card h3 { color: white; }
+    .quiz-question p strong { color: white; }
+    .quiz-question hr { border-color: rgba(255,255,255,0.1); }
+    .result-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 35px; backdrop-filter: blur(12px); max-width: 800px; margin: 20px auto; }
+    .result-card h2, .result-card h4 { color: white; }
+    .result-card p { color: rgba(255,255,255,0.6); }
+</style>
+{% endblock %}
 
-    <style>
-        .progress-circle {
-            width: 160px;
-            height: 160px;
-            border-radius: 50%;
-            background: conic-gradient(
-                #0d6efd var(--percent),
-                #e9ecef 0deg
-            );
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: auto;
-        }
+{% block content %}
+<div class="container mt-4">
 
-        .progress-circle span {
-            font-size: 32px;
-            font-weight: bold;
-        }
-
-        .stat-card {
-            border-radius: 12px;
-            padding: 15px 20px;
-            color: white;
-            font-weight: 600;
-        }
-        .option-label {
-            display: block;
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin-bottom: 6px;
-            cursor: pointer;
-        }
-
-        .correct-option {
-            background-color: #d1f7d6;
-            border: 1px solid #28a745;
-        }
-
-        .wrong-option {
-            background-color: #f8d7da;
-            border: 1px solid #dc3545;
-        }
-
-        .option-label input {
-            margin-right: 8px;
-        }
-
-    </style>
-</head>
-
-<body class="about-bg">
-
-<!-- 🔹 Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4">
-    <a class="navbar-brand fw-bold fs-4" href="/">EduVoxus</a>
-
-    <div class="ms-auto">
-        <a class="nav-link d-inline mx-4" href="/">Home</a>
-        <a class="nav-link d-inline mx-4 text-white" href="/about">About</a>
-        <a class="nav-link d-inline mx-4 text-white" href="/dashboard">Dashboard</a>
-        <a class="nav-link d-inline mx-4 text-white" href="/contact">Contact</a>
-
-    </div>
-
-</nav>
-
-<div class="container mt-5">
-
-<!-- ================= QUIZ ================= -->
-<div id="quizBox" class="card p-4 shadow-lg">
+<div id="quizBox" class="quiz-card">
     <h3 class="mb-4 text-center">Quiz on {{ topic }}</h3>
 
     {% for q in questions %}
     {% set qno = loop.index %}
-
     <div class="quiz-question" data-qno="{{ qno }}">
-
         <p><strong>{{ qno }}. {{ q.question }}</strong></p>
-
         {% set letters = ['A','B','C','D'] %}
         {% for opt in q.options %}
-            <label class="option-label"
-                data-question="{{ qno }}"
-                data-option="{{ letters[loop.index0] }}">
-                <input type="radio"
-                    name="q{{ qno }}"
-                    value="{{ letters[loop.index0] }}">
-                {{ letters[loop.index0] }} {{ opt }}
+            <label class="option-label" data-question="{{ qno }}" data-option="{{ letters[loop.index0] }}">
+                <input type="radio" name="q{{ qno }}" value="{{ letters[loop.index0] }}">
+                {{ letters[loop.index0] }}) {{ opt }}
             </label>
         {% endfor %}
-
         <input type="hidden" id="ans{{ qno }}" value="{{ q.answer }}">
     </div>
-
-    <hr>
+    <hr style="border-color: rgba(255,255,255,0.1);">
     {% endfor %}
 
-
     <div class="text-center mt-4">
-        <button class="btn btn-success btn-main" onclick="submitQuiz()">
-            Submit Answers
+        <button class="btn btn-success btn-lg px-5" style="background: linear-gradient(135deg, #22c55e, #16a34a); border: none; border-radius: 50px; font-weight: 600;" onclick="submitQuiz()">
+            Submit Answers <i class="fas fa-check"></i>
         </button>
     </div>
 </div>
 
-<!-- ================= RESULT ================= -->
-<div id="resultBox" class="card p-5 shadow-lg mt-5" style="display:none">
-
+<div id="resultBox" class="result-card" style="display:none">
     <div class="text-center mb-4">
-        <h2 class="fw-bold">🎉 Quiz Result</h2>
-        <p class="text-muted" id="feedbackText"></p>
+        <h2 class="fw-bold">Quiz Result</h2>
+        <p id="feedbackText"></p>
     </div>
 
     <div class="row align-items-center mb-4">
-
         <div class="col-md-5 text-center">
             <div class="progress-circle" id="progressCircle">
                 <span id="percentText">0%</span>
             </div>
         </div>
-
         <div class="col-md-7">
             <div class="row g-3">
-
                 <div class="col-12">
-                    <div class="stat-card bg-success d-flex justify-content-between">
-                        <span>✅ Correct</span>
-                        <span id="correctCount">0</span>
+                    <div class="stat-card d-flex justify-content-between" style="background: rgba(34,197,94,0.15);">
+                        <span style="color: #22c55e;">Correct</span>
+                        <span id="correctCount" style="color: #22c55e;">0</span>
                     </div>
                 </div>
-
                 <div class="col-12">
-                    <div class="stat-card bg-danger d-flex justify-content-between">
-                        <span>❌ Wrong</span>
-                        <span id="wrongCount">0</span>
+                    <div class="stat-card d-flex justify-content-between" style="background: rgba(239,68,68,0.15);">
+                        <span style="color: #ef4444;">Wrong</span>
+                        <span id="wrongCount" style="color: #ef4444;">0</span>
                     </div>
                 </div>
-
                 <div class="col-12">
-                    <div class="stat-card bg-primary d-flex justify-content-between">
-                        <span>🎯 Accuracy</span>
-                        <span id="accuracyText">0%</span>
+                    <div class="stat-card d-flex justify-content-between" style="background: rgba(96,165,250,0.15);">
+                        <span style="color: #60a5fa;">Accuracy</span>
+                        <span id="accuracyText" style="color: #60a5fa;">0%</span>
                     </div>
                 </div>
-
             </div>
         </div>
-
     </div>
-    <hr class="my-4">
 
-    <h4 class="mb-3">📘 Answer Review</h4>
-
+    <hr style="border-color: rgba(255,255,255,0.1);">
+    <h4 class="mb-3">Answer Review</h4>
     <div id="reviewBox"></div>
 
-
-
-
-    <div class="d-flex justify-content-center gap-3">
-        <button class="btn btn-primary" onclick="location.reload()">🔁 Retake Quiz</button>
-        <a href="/mode" class="btn btn-outline-primary">⬅ Back to Mode</a>
+    <div class="d-flex justify-content-center gap-3 mt-4">
+        <button class="btn btn-primary" style="background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; border-radius: 50px; padding: 10px 24px; font-weight: 600;" onclick="location.reload()">
+            <i class="fas fa-redo"></i> Retake Quiz
+        </button>
+        <a href="/mode" class="btn" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; padding: 10px 24px; font-weight: 600;">
+            <i class="fas fa-arrow-left"></i> Back to Modes
+        </a>
     </div>
-
 </div>
-
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
 function submitQuiz() {
     let correct = 0;
     let total = {{ questions|length }};
     let unanswered = 0;
 
-    // ----- CALCULATE SCORE -----
     for (let i = 1; i <= total; i++) {
         const selected = document.querySelector(`input[name="q${i}"]:checked`);
         const correctAns = document.getElementById(`ans${i}`).value;
-
         if (!selected) unanswered++;
         if (selected && selected.value === correctAns) correct++;
     }
@@ -198,7 +124,6 @@ function submitQuiz() {
     const wrong = total - correct;
     const accuracy = Math.round((correct / total) * 100);
 
-    // ----- SHOW RESULT BOX -----
     document.getElementById("quizBox").style.display = "none";
     document.getElementById("resultBox").style.display = "block";
 
@@ -206,55 +131,45 @@ function submitQuiz() {
     document.getElementById("wrongCount").innerText = wrong;
     document.getElementById("accuracyText").innerText = accuracy + "%";
     document.getElementById("percentText").innerText = accuracy + "%";
+    document.getElementById("progressCircle").style.setProperty("--percent", `${accuracy * 3.6}deg`);
 
-    document.getElementById("progressCircle")
-        .style.setProperty("--percent", `${accuracy * 3.6}deg`);
-
-    let feedback = "Keep Practicing 💪";
-    if (accuracy >= 80) feedback = "Excellent Work 🌟";
-    else if (accuracy >= 50) feedback = "Good Job 👍";
-
+    let feedback = "Keep Practicing!";
+    if (accuracy >= 80) feedback = "Excellent Work!";
+    else if (accuracy >= 50) feedback = "Good Job!";
     document.getElementById("feedbackText").innerText = feedback;
 
-    // ----- BUILD ANSWER REVIEW -----
+    // Save score to backend
+    fetch('/quiz-submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: "{{ topic }}", score: correct, total: total })
+    });
+
+    // Build answer review
     const reviewBox = document.getElementById("reviewBox");
     reviewBox.innerHTML = "";
 
     for (let i = 1; i <= total; i++) {
         const original = document.querySelector(`.quiz-question[data-qno="${i}"]`);
         const clone = original.cloneNode(true);
-
         const correctAns = document.getElementById(`ans${i}`).value;
         const selected = document.querySelector(`input[name="q${i}"]:checked`);
 
-        const labels = clone.querySelectorAll(".option-label");
-
-        labels.forEach(label => {
+        clone.querySelectorAll(".option-label").forEach(label => {
             const opt = label.dataset.option;
             const radio = label.querySelector("input");
-
             radio.disabled = true;
             radio.checked = false;
-
-            if (opt === correctAns) {
-                label.classList.add("correct-option");
-            }
-
-            if (selected && opt === selected.value && opt !== correctAns) {
-                label.classList.add("wrong-option");
-            }
+            if (opt === correctAns) label.classList.add("correct-option");
+            if (selected && opt === selected.value && opt !== correctAns) label.classList.add("wrong-option");
         });
 
         const answerInfo = document.createElement("p");
-        answerInfo.className = "mt-2 fw-semibold text-success";
-        answerInfo.innerText = `✔ Correct Answer: ${correctAns}`;
-
+        answerInfo.style.cssText = "margin-top: 8px; font-weight: 600; color: #22c55e;";
+        answerInfo.innerText = `Correct Answer: ${correctAns}`;
         clone.appendChild(answerInfo);
         reviewBox.appendChild(clone);
-    } 
+    }
 }
 </script>
-
-
-</body>
-</html>
+{% endblock %}

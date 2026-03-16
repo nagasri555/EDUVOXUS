@@ -1,47 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - EduVoxus</title>
-    
-    <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Custom CSS (SINGLE FILE) -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
+{% extends "base.html" %}
+{% block title %}Dashboard - EduVoxus{% endblock %}
 
-<body class="about-bg">
-    <!-- NAVBAR (SAME AS INDEX AND ABOUT) -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <a class="navbar-brand fw-bold fs-4" href="/">EduVoxus</a>
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .weak-topic { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .weak-topic-name { color: white; font-weight: 600; }
+    .weak-topic-score { color: #ef4444; font-weight: 600; font-size: 0.9rem; }
+    .badge-mini { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 50px; margin: 4px; }
+    .badge-mini i { color: #fbbf24; }
+    .badge-mini span { color: rgba(255,255,255,0.8); font-size: 0.85rem; }
+    .cert-link { display: inline-block; padding: 3px 10px; background: rgba(34,197,94,0.15); color: #22c55e; border-radius: 50px; font-size: 0.8rem; font-weight: 600; text-decoration: none; transition: all 0.3s; }
+    .cert-link:hover { background: rgba(34,197,94,0.25); color: #22c55e; }
+</style>
+{% endblock %}
 
-        <div class="ms-auto">
-            <a class="nav-link d-inline mx-3" href="/">Home</a>
-            <a class="nav-link d-inline mx-3" href="/about">About</a>
-            <a class="nav-link d-inline mx-3" href="/dashboard">Dashboard</a>
-            <a class="nav-link d-inline mx-3" href="/contact">Contact</a>
-        </div>
-    </nav>
-
+{% block content %}
     <div class="dashboard-container">
-        <!-- Header with Title and Tabs -->
         <div class="dashboard-header">
             <h1 class="dashboard-title">
-                <i class="fas fa-chart-pie"></i>
-                Performance Dashboard
+                <i class="fas fa-chart-pie"></i> Performance Dashboard
             </h1>
-            
             <div class="tab-navigation">
                 <button class="tab-btn active" onclick="showTab('performance')">
                     <i class="fas fa-chart-line"></i> Performance
@@ -49,91 +28,100 @@
                 <button class="tab-btn" onclick="showTab('history')">
                     <i class="fas fa-history"></i> History
                 </button>
+                <button class="tab-btn" onclick="showTab('insights')">
+                    <i class="fas fa-lightbulb"></i> Insights
+                </button>
             </div>
         </div>
 
-        <!-- Performance Tab Content -->
+        <!-- Performance Tab -->
         <div id="performance-tab" class="tab-content active">
-            <!-- Stats Cards -->
-            <div class="stats-grid">
+            <div class="stats-grid" style="grid-template-columns: repeat(5, 1fr);">
                 <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-tasks"></i>
-                    </div>
-                    <div class="stat-label">Total Attempts</div>
+                    <div class="stat-icon"><i class="fas fa-tasks"></i></div>
+                    <div class="stat-label">Attempts</div>
                     <div class="stat-value">{{ total_attempts }}</div>
                 </div>
-                
                 <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <div class="stat-label">Average Score</div>
+                    <div class="stat-icon"><i class="fas fa-star"></i></div>
+                    <div class="stat-label">Avg Score</div>
                     <div class="stat-value">{{ average_score }}<span class="stat-unit">/10</span></div>
                 </div>
-                
                 <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-trophy"></i>
-                    </div>
+                    <div class="stat-icon"><i class="fas fa-trophy"></i></div>
                     <div class="stat-label">Best Score</div>
                     <div class="stat-value">{{ best_score }}<span class="stat-unit">/10</span></div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: #fbbf24;"><i class="fas fa-coins"></i></div>
+                    <div class="stat-label">Points</div>
+                    <div class="stat-value">{{ points }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: #f97316;"><i class="fas fa-fire"></i></div>
+                    <div class="stat-label">Streak</div>
+                    <div class="stat-value">{{ streak }}<span class="stat-unit">days</span></div>
+                </div>
             </div>
 
-            <!-- Chart Card -->
-            <div class="chart-card">
-                <div class="chart-title">
-                    <i class="fas fa-chart-line"></i>
-                    Score Trend
+            <!-- Badges -->
+            {% if badges %}
+            <div style="margin-bottom: 25px;">
+                <h4 style="color: white; font-size: 1rem; font-weight: 600; margin-bottom: 10px;">
+                    <i class="fas fa-medal" style="color: #fbbf24;"></i> Your Badges
+                </h4>
+                <div>
+                    {% for badge in badges %}
+                    <span class="badge-mini"><i class="fas {{ badge.icon }}"></i> <span>{{ badge.name }}</span></span>
+                    {% endfor %}
                 </div>
+            </div>
+            {% endif %}
+
+            <div class="chart-card">
+                <div class="chart-title"><i class="fas fa-chart-line"></i> Score Trend</div>
                 <canvas id="scoreChart"></canvas>
             </div>
         </div>
 
-        <!-- History Tab Content -->
+        <!-- History Tab -->
         <div id="history-tab" class="tab-content">
             <div class="history-card">
-                <div class="history-title">
-                    <i class="fas fa-clock"></i>
-                    Interview History
-                </div>
-                
+                <div class="history-title"><i class="fas fa-clock"></i> Practice History</div>
                 {% if results %}
                 <div class="table-responsive">
                     <table class="history-table">
                         <thead>
-                            <tr>
-                                <th>Topic</th>
-                                <th>Score</th>
-                                <th>Date</th>
-                            </tr>
+                            <tr><th>Topic</th><th>Mode</th><th>Score</th><th>Date</th><th>Certificate</th></tr>
                         </thead>
                         <tbody>
-                            {% for r in results %}
+                            {% for r in results | reverse %}
                             <tr>
+                                <td><i class="fas fa-book-open me-2" style="color: #60a5fa;"></i>{{ r.topic }}</td>
                                 <td>
-                                    <i class="fas fa-book-open me-2" style="color: #60a5fa;"></i>
-                                    {{ r.topic }}
+                                    <span style="padding: 3px 10px; border-radius: 50px; font-size: 0.8rem; font-weight: 600;
+                                        {% if r.mode == 'quiz' %}background: rgba(59,130,246,0.15); color: #3b82f6;
+                                        {% elif r.mode == 'voice' %}background: rgba(147,51,234,0.15); color: #9333ea;
+                                        {% else %}background: rgba(219,39,119,0.15); color: #db2777;{% endif %}">
+                                        {{ r.mode or 'voice' }}
+                                    </span>
                                 </td>
                                 <td>
                                     {% if r.score >= 8 %}
-                                        <span class="score-badge score-high">
-                                            <i class="fas fa-check-circle me-1"></i>{{ r.score }}/10
-                                        </span>
+                                        <span class="score-badge score-high"><i class="fas fa-check-circle me-1"></i>{{ r.score }}/10</span>
                                     {% elif r.score >= 5 %}
-                                        <span class="score-badge score-medium">
-                                            <i class="fas fa-exclamation-circle me-1"></i>{{ r.score }}/10
-                                        </span>
+                                        <span class="score-badge score-medium"><i class="fas fa-exclamation-circle me-1"></i>{{ r.score }}/10</span>
                                     {% else %}
-                                        <span class="score-badge score-low">
-                                            <i class="fas fa-times-circle me-1"></i>{{ r.score }}/10
-                                        </span>
+                                        <span class="score-badge score-low"><i class="fas fa-times-circle me-1"></i>{{ r.score }}/10</span>
                                     {% endif %}
                                 </td>
+                                <td><i class="far fa-calendar-alt me-2" style="color: #60a5fa;"></i>{{ r.date.strftime("%Y-%m-%d") }}</td>
                                 <td>
-                                    <i class="far fa-calendar-alt me-2" style="color: #60a5fa;"></i>
-                                    {{ r.date.strftime("%Y-%m-%d") }}
+                                    {% if r.score >= 7 %}
+                                    <a href="/certificate/{{ r.id }}" class="cert-link"><i class="fas fa-certificate"></i> Get</a>
+                                    {% else %}
+                                    <span style="color: rgba(255,255,255,0.3); font-size: 0.8rem;">Score 7+ needed</span>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -144,95 +132,94 @@
                 <div class="empty-state">
                     <i class="fas fa-inbox"></i>
                     <p>No attempts yet. Start learning to see your history!</p>
-                    <a href="/mode" class="empty-btn">
-                        Start Learning <i class="fas fa-arrow-right ms-2"></i>
-                    </a>
+                    <a href="/mode" class="empty-btn">Start Learning <i class="fas fa-arrow-right ms-2"></i></a>
                 </div>
                 {% endif %}
             </div>
         </div>
+
+        <!-- Insights Tab -->
+        <div id="insights-tab" class="tab-content">
+            <div class="history-card" style="margin-bottom: 20px;">
+                <div class="history-title"><i class="fas fa-exclamation-triangle" style="color: #f97316;"></i> Weak Topics (Need Improvement)</div>
+                {% if weak_topics %}
+                    {% for wt in weak_topics %}
+                    <div class="weak-topic">
+                        <div>
+                            <span class="weak-topic-name">{{ wt.topic }}</span>
+                            <span style="color: rgba(255,255,255,0.4); font-size: 0.85rem; margin-left: 10px;">{{ wt.attempts }} attempts</span>
+                        </div>
+                        <div>
+                            <span class="weak-topic-score">Avg: {{ wt.avg_score }}/10</span>
+                            <a href="/start?mode=quiz" style="margin-left: 10px; padding: 4px 12px; background: rgba(96,165,250,0.15); color: #60a5fa; border-radius: 50px; font-size: 0.8rem; text-decoration: none;">Practice</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: rgba(255,255,255,0.4); text-align: center; padding: 20px;">No weak topics found. Great job!</p>
+                {% endif %}
+            </div>
+
+            <div class="history-card">
+                <div class="history-title"><i class="fas fa-chart-bar" style="color: #c084fc;"></i> Topic Breakdown</div>
+                {% for topic, data in topic_breakdown.items() %}
+                <div style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="color: white; font-weight: 600;">{{ topic }}</span>
+                        <span style="color: rgba(255,255,255,0.5);">Avg: {{ data.avg }}/10 ({{ data.count }} sessions)</span>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 50px; height: 8px; overflow: hidden;">
+                        <div style="width: {{ data.avg * 10 }}%; height: 100%; background: linear-gradient(90deg, #3b82f6, #9333ea); border-radius: 50px;"></div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if not topic_breakdown %}
+                <p style="color: rgba(255,255,255,0.4); text-align: center; padding: 20px;">No data yet.</p>
+                {% endif %}
+            </div>
+        </div>
     </div>
+{% endblock %}
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Tab Switching Script -->
-    <script>
-        function showTab(tabName) {
-            // Hide all tabs
-            document.getElementById('performance-tab').classList.remove('active');
-            document.getElementById('history-tab').classList.remove('active');
-            
-            // Remove active class from all buttons
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Show selected tab
-            if (tabName === 'performance') {
-                document.getElementById('performance-tab').classList.add('active');
-                document.querySelectorAll('.tab-btn')[0].classList.add('active');
-            } else {
-                document.getElementById('history-tab').classList.add('active');
-                document.querySelectorAll('.tab-btn')[1].classList.add('active');
-            }
-        }
+{% block scripts %}
+<script>
+    function showTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabName + '-tab').classList.add('active');
+        event.target.closest('.tab-btn').classList.add('active');
+    }
 
-        // Chart Script
-        const ctx = document.getElementById('scoreChart');
-        if (ctx) {
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: {{ dates | tojson }},
-                    datasets: [{
-                        label: 'Score',
-                        data: {{ scores | tojson }},
-                        borderColor: '#60a5fa',
-                        backgroundColor: 'rgba(96, 165, 250, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointBackgroundColor: '#c084fc',
-                        pointBorderColor: 'white',
-                        pointBorderWidth: 2,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            min: 0,
-                            max: 10,
-                            ticks: {
-                                stepSize: 1,
-                                color: '#64748b'
-                            },
-                            grid: {
-                                    color: 'rgba(255,255,255,0.3)'
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: '#64748b',
-                                maxRotation: 45,
-                                minRotation: 45
-                            },
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
+    const ctx = document.getElementById('scoreChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ dates | tojson }},
+                datasets: [{
+                    label: 'Score',
+                    data: {{ scores | tojson }},
+                    borderColor: '#60a5fa',
+                    backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#c084fc',
+                    pointBorderColor: 'white',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { min: 0, max: 10, ticks: { stepSize: 1, color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    x: { ticks: { color: '#64748b', maxRotation: 45, minRotation: 45 }, grid: { display: false } }
                 }
-            });
-        }
-    </script>
-</body>
-</html>
+            }
+        });
+    }
+</script>
+{% endblock %}

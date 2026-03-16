@@ -1,95 +1,62 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>EduVoxus | Voice Practice</title>
+{% extends "base.html" %}
+{% block title %}EduVoxus | Voice Practice{% endblock %}
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
-</head>
-
-<body class="about-bg">
-
-<!-- 🔹 Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4">
-    <a class="navbar-brand fw-bold fs-4" href="/">EduVoxus</a>
-
-    <div class="ms-auto">
-        <a class="nav-link d-inline mx-4" href="/">Home</a>
-        <a class="nav-link d-inline mx-4 text-white" href="/about">About</a>
-        <a class="nav-link d-inline mx-4 text-white" href="/dashboard">Dashboard</a>
-        <a class="nav-link d-inline mx-4 text-white" href="/contact">Contact</a>
-
-    </div>
-
-</nav>
-
-<div class="container mt-5">
-    <div class="card p-4 shadow-lg mx-auto" style="max-width:700px">
-
-        <h3 class="text-center mb-3">🎤 Voice Practice</h3>
-        <p class="text-center text-muted">
-            Topic: <strong>{{ topic }}</strong>
+{% block content %}
+<div class="container mt-4">
+    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; backdrop-filter: blur(12px); max-width: 700px; margin: auto;">
+        <h3 class="text-center mb-3" style="color: white;">
+            <i class="fas fa-microphone-alt" style="color: #c084fc;"></i> Voice Practice
+        </h3>
+        <p class="text-center" style="color: rgba(255,255,255,0.5);">
+            Topic: <strong style="color: white;">{{ topic }}</strong>
         </p>
 
-        <!-- QUESTION DISPLAY -->
         <div id="practiceSection">
+            <h5 id="questionCounter" class="mt-3" style="color: rgba(255,255,255,0.7);"></h5>
+            <p id="questionText" class="fw-semibold" style="color: white; font-size: 1.1rem;"></p>
 
-        <h5 id="questionCounter" class="mt-3"></h5>
-        <p id="questionText" class="fw-semibold"></p>
+            <label class="form-label mt-3" style="color: rgba(255,255,255,0.7);">Your Spoken Answer</label>
+            <textarea id="speechText" class="form-control" rows="6" placeholder="Click Start and speak..."
+                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px;"></textarea>
 
-        <label class="form-label mt-3">Your Spoken Answer</label>
-        <textarea id="speechText" class="form-control" rows="6"
-            placeholder="Click Start and speak..."></textarea>
-
-        <div class="text-center mt-4">
-            <button class="btn btn-success px-4 me-2" onclick="startRecording()">
-                🎤 Start
-            </button>
-
-            <button class="btn btn-danger px-4 me-2" onclick="stopRecording()">
-                ⏹ Stop
-            </button>
-
-            <button id="nextBtn" class="btn btn-primary px-4" onclick="nextQuestion()">
-                Next
-            </button>
+            <div class="text-center mt-4 d-flex gap-3 justify-content-center">
+                <button class="btn px-4" style="background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; border-radius: 50px; font-weight: 600;" onclick="startRecording()">
+                    <i class="fas fa-microphone"></i> Start
+                </button>
+                <button class="btn px-4" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; border-radius: 50px; font-weight: 600;" onclick="stopRecording()">
+                    <i class="fas fa-stop"></i> Stop
+                </button>
+                <button id="nextBtn" class="btn px-4" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 50px; font-weight: 600;" onclick="nextQuestion()">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
         </div>
 
-</div>
-
-<div id="resultSection" class="mt-4"></div>
-        </div>
-
-        <div id="backendResponse" class="mt-4"></div>
-        <p class="text-center mt-3 text-muted" id="statusText"></p>
-
+        <div id="resultSection" class="mt-4"></div>
+        <p class="text-center mt-3" style="color: rgba(255,255,255,0.4);" id="statusText"></p>
     </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
 let questions = {{ questions | tojson }};
 let answers = [];
 let currentIndex = 0;
-
 let recognition;
 let isRecording = false;
 
 function loadQuestion() {
     document.getElementById("questionText").innerText = questions[currentIndex];
-    document.getElementById("questionCounter").innerText =
-        `Question ${currentIndex + 1} of ${questions.length}`;
+    document.getElementById("questionCounter").innerText = `Question ${currentIndex + 1} of ${questions.length}`;
 
     const nextBtn = document.getElementById("nextBtn");
-
     if (currentIndex === questions.length - 1) {
-        nextBtn.innerText = "📤 Submit for Evaluation";
-        nextBtn.classList.remove("btn-primary");
-        nextBtn.classList.add("btn-success");
+        nextBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit';
+        nextBtn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
     } else {
-        nextBtn.innerText = "Next";
-        nextBtn.classList.remove("btn-success");
-        nextBtn.classList.add("btn-primary");
+        nextBtn.innerHTML = 'Next <i class="fas fa-arrow-right"></i>';
+        nextBtn.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
     }
 }
 
@@ -97,30 +64,17 @@ loadQuestion();
 
 function startRecording() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-        alert("Speech recognition not supported");
-        return;
-    }
-
+    if (!SpeechRecognition) { alert("Speech recognition not supported"); return; }
     recognition = new SpeechRecognition();
     recognition.lang = "en-US";
     recognition.continuous = true;
     recognition.interimResults = true;
-
-    recognition.onstart = () => {
-        isRecording = true;
-        document.getElementById("statusText").innerText = "🎙 Listening...";
-    };
-
+    recognition.onstart = () => { isRecording = true; document.getElementById("statusText").innerText = "Listening..."; };
     recognition.onresult = (event) => {
         let transcript = "";
-        for (let i = 0; i < event.results.length; i++) {
-            transcript += event.results[i][0].transcript;
-        }
+        for (let i = 0; i < event.results.length; i++) transcript += event.results[i][0].transcript;
         document.getElementById("speechText").value = transcript;
     };
-
     recognition.start();
 }
 
@@ -128,99 +82,49 @@ function stopRecording() {
     if (recognition && isRecording) {
         recognition.stop();
         isRecording = false;
-        document.getElementById("statusText").innerText = "⏹ Recording stopped";
+        document.getElementById("statusText").innerText = "Recording stopped";
     }
 }
 
 function nextQuestion() {
     stopRecording();
-
     const answer = document.getElementById("speechText").value.trim();
-    if (!answer) {
-        alert("Please answer before continuing");
-        return;
-    }
-
+    if (!answer) { alert("Please answer before continuing"); return; }
     answers.push(answer);
     document.getElementById("speechText").value = "";
-
-    if (currentIndex < questions.length - 1) {
-        currentIndex++;
-        loadQuestion();
-    } else {
-        submitAll();
-    }
+    if (currentIndex < questions.length - 1) { currentIndex++; loadQuestion(); }
+    else submitAll();
 }
 
 function submitAll() {
+    document.getElementById("statusText").innerText = "Evaluating your answers...";
     fetch("/voice-evaluate", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            topic: "{{ topic }}",
-            questions: questions,
-            answers: answers
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: "{{ topic }}", questions: questions, answers: answers })
     })
     .then(res => res.json())
     .then(data => {
         let parsed = JSON.parse(data.evaluation);
-
-        let html = `<h4 class="mt-4">Overall Score: ${parsed.overall_score}</h4>`;
-
-        parsed.results.forEach((item, index) => {
-            html += `
-                <div class="card mt-3 p-3">
-                    <h6>Question ${index + 1}</h6>
-                    <p><strong>Score:</strong> ${item.score}/10</p>
-                    <p><strong>Strengths:</strong><br> - ${item.strengths.join("<br> - ")}</p>
-                    <p><strong>Improvements:</strong><br> - ${item.improvements.join("<br> - ")}</p>
-                </div>
-            `;
-        });
-
-        // Hide practice section
         document.getElementById("practiceSection").style.display = "none";
+        document.getElementById("statusText").innerText = "";
 
-        // Show results
-        let finalHTML = `
-            <div class="text-center">
-                <h3 class="mb-3">🎯 Result</h3>
-                <h4>Overall Score: ${parsed.overall_score}</h4>
-            </div>
-        `;
-
+        let html = `<div class="text-center"><h3 style="color: white;">Result</h3><h4 style="color: #60a5fa;">Overall Score: ${parsed.overall_score}/10</h4></div>`;
         parsed.results.forEach((item, index) => {
-            finalHTML += `
-                <div class="card mt-3 p-3">
-                    <h6>Question ${index + 1}</h6>
-                    <p><strong>Score:</strong> ${item.score}/10</p>
-                    <p><strong>Strengths:</strong><br> - ${item.strengths.join("<br> - ")}</p>
-                    <p><strong>Improvements:</strong><br> - ${item.improvements.join("<br> - ")}</p>
-                </div>
-            `;
+            html += `<div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; margin-top: 12px;">
+                <h6 style="color: white;">Question ${index + 1}</h6>
+                <p style="color: rgba(255,255,255,0.7);"><strong>Score:</strong> ${item.score}/10</p>
+                <p style="color: rgba(255,255,255,0.7);"><strong>Strengths:</strong><br>- ${item.strengths.join("<br>- ")}</p>
+                <p style="color: rgba(255,255,255,0.7);"><strong>Improvements:</strong><br>- ${item.improvements.join("<br>- ")}</p>
+            </div>`;
         });
-
-        // Add buttons
-        finalHTML += `
-            <div class="text-center mt-4">
-                <a href="/voice?topic={{ topic }}&count=${questions.length}" 
-                class="btn btn-success me-2">🔁 Try Again</a>
-
-                <a href="/mode" 
-                class="btn btn-secondary">⬅ Go Back to Mode</a>
-            </div>
-        `;
-
-        document.getElementById("resultSection").innerHTML = finalHTML;
-            })
-    .catch(err => {
-        alert("Evaluation failed");
-    });
+        html += `<div class="text-center mt-4">
+            <a href="/voice?topic={{ topic }}&count=${questions.length}" style="padding: 10px 22px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; margin-right: 10px;">Try Again</a>
+            <a href="/mode" style="padding: 10px 22px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); text-decoration: none; border-radius: 50px; font-weight: 600;">Back to Modes</a>
+        </div>`;
+        document.getElementById("resultSection").innerHTML = html;
+    })
+    .catch(() => alert("Evaluation failed. Please try again."));
 }
 </script>
-
-</body>
-</html>
+{% endblock %}

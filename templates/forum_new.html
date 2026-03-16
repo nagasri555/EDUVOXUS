@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}EduVoxus | New Discussion{% endblock %}
+
+{% block content %}
+<div style="max-width: 700px; margin: 40px auto; padding: 0 20px;">
+    <h1 style="color: white; font-size: 2rem; font-weight: 700; margin-bottom: 25px;">
+        <i class="fas fa-pen-to-square"></i> Start a Discussion
+    </h1>
+
+    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; backdrop-filter: blur(12px);">
+        <form method="POST">
+            <div style="margin-bottom: 20px;">
+                <label style="color: rgba(255,255,255,0.8); font-weight: 600; display: block; margin-bottom: 8px;">
+                    <i class="fas fa-heading" style="color: #60a5fa;"></i> Title
+                </label>
+                <input type="text" name="title" required placeholder="What's your question?"
+                    style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 16px; color: white; font-size: 1rem; outline: none;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="color: rgba(255,255,255,0.8); font-weight: 600; display: block; margin-bottom: 8px;">
+                    <i class="fas fa-tag" style="color: #60a5fa;"></i> Topic
+                </label>
+                <select name="topic"
+                    style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 16px; color: white; font-size: 1rem; outline: none;">
+                    <option value="General" style="background: #1e1e2f;">General</option>
+                    <option value="DBMS" style="background: #1e1e2f;">DBMS</option>
+                    <option value="OS" style="background: #1e1e2f;">Operating Systems</option>
+                    <option value="DSA" style="background: #1e1e2f;">Data Structures</option>
+                    <option value="Python" style="background: #1e1e2f;">Python</option>
+                    <option value="Web Development" style="background: #1e1e2f;">Web Development</option>
+                    <option value="Machine Learning" style="background: #1e1e2f;">Machine Learning</option>
+                    <option value="Networking" style="background: #1e1e2f;">Networking</option>
+                    <option value="Other" style="background: #1e1e2f;">Other</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="color: rgba(255,255,255,0.8); font-weight: 600; display: block; margin-bottom: 8px;">
+                    <i class="fas fa-align-left" style="color: #60a5fa;"></i> Details
+                </label>
+                <textarea name="content" required rows="6" placeholder="Describe your question in detail..."
+                    style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 16px; color: white; font-size: 1rem; outline: none; resize: vertical;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <button type="submit"
+                    style="flex: 1; padding: 14px; background: linear-gradient(135deg, #3b82f6, #9333ea); color: white; border: none; border-radius: 50px; font-weight: 600; font-size: 1rem; cursor: pointer;">
+                    <i class="fas fa-paper-plane"></i> Post Discussion
+                </button>
+                <a href="/forum"
+                    style="padding: 14px 24px; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; text-decoration: none; font-weight: 600; display: flex; align-items: center;">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

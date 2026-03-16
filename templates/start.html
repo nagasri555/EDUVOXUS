@@ -1,47 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduVoxus | Start Learning</title>
-    
-    <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
+{% extends "base.html" %}
+{% block title %}EduVoxus | Start Learning{% endblock %}
 
-<body class="about-bg">
-    <!-- Background glowing orbs (same as other pages) -->
-    <div class="glow-orb orb1"></div>
-    <div class="glow-orb orb2"></div>
-
-    <!-- NAVBAR (Same as all pages) -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <a class="navbar-brand fw-bold fs-4" href="/">EduVoxus</a>
-
-        <div class="ms-auto">
-            <a class="nav-link d-inline mx-3" href="/">Home</a>
-            <a class="nav-link d-inline mx-3" href="/about">About</a>
-            <a class="nav-link d-inline mx-3" href="/dashboard">Dashboard</a>
-            <a class="nav-link d-inline mx-3" href="/contact">Contact</a>
-        </div>
-    </nav>
-
-    <!-- Start Page Content -->
+{% block content %}
     <div class="start-wrapper">
         <div class="start-container">
-            
-            <!-- Mode Badge -->
             <div class="text-center">
-                <div class="mode-badge 
+                <div class="mode-badge
                     {% if mode == 'quiz' %}quiz
                     {% elif mode == 'voice' %}voice
                     {% elif mode == 'theory' %}theory
@@ -59,40 +23,28 @@
                 </div>
             </div>
 
-            <!-- Start Card -->
-            <div class="start-card 
+            <div class="start-card
                 {% if mode == 'quiz' %}quiz-mode
                 {% elif mode == 'voice' %}voice-mode
                 {% elif mode == 'theory' %}theory-mode
                 {% endif %}">
-                
+
                 <h2 class="start-title">Start Your Practice</h2>
                 <p class="start-subtitle">Configure your learning session below</p>
 
                 <form method="get"
                     action="{{ '/quiz' if mode == 'quiz'
                               else '/voice' if mode == 'voice'
-                              else '/theory' }}"
-                    class="start-form">
+                              else '/theory' }}">
 
-                    <!-- Topic Field -->
                     <div class="form-group">
-                        <label class="form-label">
-                            <i class="fas fa-tag"></i> Enter Topic
-                        </label>
-                        <input type="text" 
-                               name="topic" 
-                               class="form-control"
-                               placeholder="e.g. DBMS, OS, Python" 
-                               required>
+                        <label class="form-label"><i class="fas fa-tag"></i> Enter Topic</label>
+                        <input type="text" name="topic" class="form-control" placeholder="e.g. DBMS, OS, Python" required>
                     </div>
 
-                    <!-- Quiz Mode -->
                     {% if mode == "quiz" %}
                     <div class="form-group">
-                        <label class="form-label">
-                            <i class="fas fa-list"></i> Number of MCQs
-                        </label>
+                        <label class="form-label"><i class="fas fa-list"></i> Number of MCQs</label>
                         <select class="form-select" name="mcqs">
                             <option value="3">3 Questions</option>
                             <option value="5" selected>5 Questions</option>
@@ -101,12 +53,9 @@
                     </div>
                     {% endif %}
 
-                    <!-- Theory Mode -->
                     {% if mode == "theory" %}
                     <div class="form-group">
-                        <label class="form-label">
-                            <i class="fas fa-pen"></i> Number of Theory Questions
-                        </label>
+                        <label class="form-label"><i class="fas fa-pen"></i> Number of Theory Questions</label>
                         <select class="form-select" name="count">
                             <option value="3">3 Questions</option>
                             <option value="5" selected>5 Questions</option>
@@ -115,51 +64,37 @@
                     </div>
                     {% endif %}
 
-                    <!-- Voice Mode -->
                     {% if mode == "voice" %}
                     <div class="form-group">
-                        <label class="form-label">
-                            <i class="fas fa-microphone"></i> Number of Voice Questions
-                        </label>
+                        <label class="form-label"><i class="fas fa-microphone"></i> Number of Voice Questions</label>
                         <select class="form-select" name="count">
                             <option value="1">1 Question</option>
                             <option value="3" selected>3 Questions</option>
                             <option value="5">5 Questions</option>
                         </select>
                     </div>
-
-                    <!-- Difficulty Dropdown -->
                     <div class="form-group">
-                        <label class="form-label">
-                            <i class="fas fa-signal"></i> Difficulty Level
-                        </label>
+                        <label class="form-label"><i class="fas fa-signal"></i> Difficulty Level</label>
                         <select class="form-select" name="difficulty">
                             <option value="easy">Easy</option>
                             <option value="medium" selected>Medium</option>
                             <option value="hard">Hard</option>
                         </select>
+                        <small style="color: rgba(255,255,255,0.4); margin-top: 6px; display: block;">
+                            <i class="fas fa-magic"></i> AI suggests: <strong style="color: #c084fc;">{{ suggested_difficulty }}</strong> based on your history
+                        </small>
                     </div>
                     {% endif %}
 
-                    <!-- Continue Button -->
                     <div class="text-center">
-                        <button class="continue-btn">
-                            Start Learning <i class="fas fa-arrow-right"></i>
-                        </button>
+                        <button class="continue-btn">Start Learning <i class="fas fa-arrow-right"></i></button>
                     </div>
                 </form>
 
-                <!-- Back Link -->
                 <div class="text-center">
-                    <a href="/mode" class="back-link">
-                        <i class="fas fa-arrow-left"></i> Back to Modes
-                    </a>
+                    <a href="/mode" class="back-link"><i class="fas fa-arrow-left"></i> Back to Modes</a>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}

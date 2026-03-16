@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard | EduVoxus{% endblock %}
+
+{% block head %}
+<style>
+    .admin-container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+    .admin-header h1 { color: white; font-size: 2rem; font-weight: 700; margin-bottom: 25px; }
+    .admin-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 30px; }
+    .admin-stat { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; text-align: center; backdrop-filter: blur(12px); }
+    .admin-stat-icon { font-size: 1.5rem; margin-bottom: 8px; }
+    .admin-stat-val { font-size: 2rem; font-weight: 700; color: white; }
+    .admin-stat-label { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-top: 4px; }
+    .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .admin-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; backdrop-filter: blur(12px); }
+    .admin-card h3 { color: white; font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; }
+    .admin-card h3 i { color: #60a5fa; margin-right: 8px; }
+    .admin-table { width: 100%; border-collapse: collapse; }
+    .admin-table th { text-align: left; padding: 8px 10px; color: rgba(255,255,255,0.5); font-size: 0.8rem; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .admin-table td { padding: 10px; color: rgba(255,255,255,0.8); font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .role-badge { padding: 3px 10px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
+    .role-admin { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .role-teacher { background: rgba(96,165,250,0.15); color: #60a5fa; }
+    .role-student { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .msg-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+    .msg-card.unread { border-left: 3px solid #60a5fa; }
+    .msg-from { color: white; font-weight: 600; font-size: 0.9rem; }
+    .msg-text { color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-top: 4px; }
+    .msg-time { color: rgba(255,255,255,0.4); font-size: 0.8rem; margin-top: 4px; }
+    .admin-link { color: #60a5fa; text-decoration: none; font-size: 0.85rem; font-weight: 600; }
+    @media (max-width: 768px) {
+        .admin-stats { grid-template-columns: repeat(2, 1fr); }
+        .admin-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1><i class="fas fa-shield-alt" style="color: #60a5fa;"></i> Admin Dashboard</h1>
+    </div>
+
+    <div class="admin-stats">
+        <div class="admin-stat">
+            <div class="admin-stat-icon" style="color: #3b82f6;"><i class="fas fa-users"></i></div>
+            <div class="admin-stat-val">{{ total_users }}</div>
+            <div class="admin-stat-label">Total Users</div>
+        </div>
+        <div class="admin-stat">
+            <div class="admin-stat-icon" style="color: #9333ea;"><i class="fas fa-tasks"></i></div>
+            <div class="admin-stat-val">{{ total_sessions }}</div>
+            <div class="admin-stat-label">Total Sessions</div>
+        </div>
+        <div class="admin-stat">
+            <div class="admin-stat-icon" style="color: #22c55e;"><i class="fas fa-graduation-cap"></i></div>
+            <div class="admin-stat-val">{{ total_courses }}</div>
+            <div class="admin-stat-label">Courses</div>
+        </div>
+        <div class="admin-stat">
+            <div class="admin-stat-icon" style="color: #f97316;"><i class="fas fa-comments"></i></div>
+            <div class="admin-stat-val">{{ total_posts }}</div>
+            <div class="admin-stat-label">Forum Posts</div>
+        </div>
+        <div class="admin-stat">
+            <div class="admin-stat-icon" style="color: #ef4444;"><i class="fas fa-envelope"></i></div>
+            <div class="admin-stat-val">{{ total_contacts }}</div>
+            <div class="admin-stat-label">Unread Messages</div>
+        </div>
+    </div>
+
+    <div class="admin-grid">
+        <div class="admin-card">
+            <h3><i class="fas fa-user-plus"></i> Recent Users <a href="/admin/users" class="admin-link" style="float: right;">View All</a></h3>
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr>
+                </thead>
+                <tbody>
+                    {% for u in recent_users %}
+                    <tr>
+                        <td>{{ u.name }}</td>
+                        <td>{{ u.email }}</td>
+                        <td><span class="role-badge role-{{ u.role }}">{{ u.role }}</span></td>
+                        <td>{{ u.created_at.strftime("%b %d") if u.created_at else 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="admin-card">
+            <h3><i class="fas fa-chart-line"></i> Recent Activity</h3>
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Student</th><th>Topic</th><th>Score</th><th>Date</th></tr>
+                </thead>
+                <tbody>
+                    {% for result, user in recent_results %}
+                    <tr>
+                        <td>{{ user.name }}</td>
+                        <td>{{ result.topic }}</td>
+                        <td>{{ result.score }}/10</td>
+                        <td>{{ result.date.strftime("%b %d") }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="admin-card" style="grid-column: 1 / -1;">
+            <h3><i class="fas fa-envelope"></i> Contact Messages</h3>
+            {% for msg in messages %}
+            <div class="msg-card {{ 'unread' if not msg.is_read }}">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="msg-from">{{ msg.name }} ({{ msg.email }})</span>
+                    <span class="msg-time">{{ msg.created_at.strftime("%b %d, %Y") if msg.created_at else '' }}</span>
+                </div>
+                <div style="color: rgba(255,255,255,0.7); font-size: 0.85rem; margin-top: 2px;">{{ msg.subject }}</div>
+                <div class="msg-text">{{ msg.message[:200] }}</div>
+                {% if not msg.is_read %}
+                <button onclick="markRead({{ msg.id }}, this)" style="margin-top: 6px; padding: 4px 12px; background: rgba(96,165,250,0.15); color: #60a5fa; border: none; border-radius: 50px; font-size: 0.8rem; cursor: pointer;">
+                    Mark as Read
+                </button>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% if not messages %}
+            <p style="color: rgba(255,255,255,0.4); text-align: center; padding: 20px;">No messages yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function markRead(id, btn) {
+    fetch(`/admin/message/${id}/read`, { method: 'POST' })
+    .then(() => {
+        btn.parentElement.classList.remove('unread');
+        btn.remove();
+    });
+}
+</script>
+{% endblock %}

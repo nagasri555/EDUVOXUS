@@ -1,92 +1,45 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>EduVoxus | Theory Questions</title>
+{% extends "base.html" %}
+{% block title %}EduVoxus | Theory Questions{% endblock %}
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
-</head>
-
-<body class="about-bg">
-
-<!-- 🔹 Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4">
-    <a class="navbar-brand fw-bold fs-4" href="/">EduVoxus</a>
-
-    <div class="ms-auto">
-        <a class="nav-link d-inline mx-4" href="/">Home</a>
-        <a class="nav-link d-inline mx-4 text-white" href="/about">About</a>
-        <a class="nav-link d-inline mx-4 text-white" href="/dashboard">Dashboard</a>
-        <a class="nav-link d-inline mx-4 text-white" href="/contact">Contact</a>
-
-    </div>
-
-</nav>
-
-<div class="container mt-5">
-    
-    <h3 class="mb-4 text-center">
-        📘 Theory Questions on <span class="text-success">{{ topic }}</span>
+{% block content %}
+<div class="container mt-4">
+    <h3 class="mb-4 text-center" style="color: white;">
+        <i class="fas fa-book-open" style="color: #db2777;"></i> Theory Questions on <span style="color: #60a5fa;">{{ topic }}</span>
     </h3>
-<!-- ================= QUESTIONS ================= -->
-<div id="questionBox" class="card p-4 shadow-lg mx-auto" style="max-width:900px;">
-    
 
-    <ol class="fs-5">
-        {% for q in questions %}
-            <li>{{ q }}</li>
-        {% endfor %}
-    </ol>
+    <div id="questionBox" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; backdrop-filter: blur(12px); max-width: 900px; margin: auto;">
+        <ol style="font-size: 1.1rem; color: rgba(255,255,255,0.8); line-height: 2;">
+            {% for q in questions %}
+                <li style="margin-bottom: 10px;">{{ q }}</li>
+            {% endfor %}
+        </ol>
 
+        <div class="text-center mt-4">
+            <button onclick="finishPractice()" style="padding: 12px 30px; background: linear-gradient(135deg, #db2777, #be185d); color: white; border: none; border-radius: 50px; font-weight: 600; cursor: pointer;">
+                <i class="fas fa-check"></i> Finish Practice
+            </button>
+        </div>
+    </div>
 
-    <div class="text-center mt-4">
-        <button class="btn btn-primary px-4" onclick="finishPractice()">
-            Finish Practice
-        </button>
+    <div id="resultBox" style="display:none; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 40px; backdrop-filter: blur(12px); max-width: 900px; margin: 20px auto; text-align: center;">
+        <h2 class="fw-bold mb-2" style="color: white;">Practice Completed!</h2>
+        <p style="color: rgba(255,255,255,0.6);">You've reviewed theory questions on <strong style="color: white;">{{ topic }}</strong>. +3 points earned!</p>
+
+        <h5 class="mt-4" style="color: rgba(255,255,255,0.7);">What's next?</h5>
+        <div class="d-flex justify-content-center gap-3 mt-3 flex-wrap">
+            <a href="/start?mode=quiz" style="padding: 10px 24px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; text-decoration: none; border-radius: 50px; font-weight: 600;">Take a Quiz</a>
+            <a href="/start?mode=voice" style="padding: 10px 24px; background: linear-gradient(135deg, #9333ea, #7e22ce); color: white; text-decoration: none; border-radius: 50px; font-weight: 600;">Voice Practice</a>
+            <a href="/mode" style="padding: 10px 24px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); text-decoration: none; border-radius: 50px; font-weight: 600;">Back to Modes</a>
+        </div>
     </div>
 </div>
+{% endblock %}
 
-<!-- ================= RESULT ================= -->
-<div id="resultBox" class="card p-5 shadow-lg mt-5 text-center mx-auto"
-     style="display:none; max-width:900px;">
-
-    <h2 class="fw-bold mb-2">🎉 Practice Completed</h2>
-
-    <p class="text-muted">
-        You have successfully reviewed theory questions on
-        <strong>{{ topic }}</strong>.
-    </p>
-
-    <h5 class="mt-4">👉 Next, you can try:</h5>
-    <ul class="list-unstyled fs-5">
-        <li>• Quiz Mode</li>
-        <li>• Voice Practice</li>
-    </ul>
-
-    <div class="d-flex justify-content-center gap-3 mt-4">
-        <button class="btn btn-primary" onclick="practiceAgain()">
-            🔁 Practice Again
-        </button>
-        <a href="/mode" class="btn btn-outline-primary">
-            ⬅ Back to Mode
-        </a>
-    </div>
-</div>
-
-</div>
-
-<!-- ================= SCRIPT ================= -->
+{% block scripts %}
 <script>
 function finishPractice() {
     document.getElementById("questionBox").style.display = "none";
     document.getElementById("resultBox").style.display = "block";
 }
-
-function practiceAgain() {
-    window.location.href = "/start?mode=theory";
-}
 </script>
-
-</body>
-</html>
+{% endblock %}

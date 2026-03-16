@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}EduVoxus | Leaderboard{% endblock %}
+
+{% block head %}
+<style>
+    .lb-container { max-width: 1000px; margin: 20px auto; padding: 0 20px; }
+    .lb-header { text-align: center; margin-bottom: 30px; }
+    .lb-header h1 { font-size: 2rem; font-weight: 700; color: white; }
+    .lb-header p { color: rgba(255,255,255,0.6); }
+    .your-rank-card { background: linear-gradient(135deg, rgba(96,165,250,0.15), rgba(192,132,252,0.15)); border: 1px solid rgba(96,165,250,0.3); border-radius: 20px; padding: 25px; text-align: center; margin-bottom: 30px; backdrop-filter: blur(12px); }
+    .your-rank-card h2 { color: white; font-size: 2.5rem; font-weight: 800; }
+    .your-rank-card p { color: rgba(255,255,255,0.7); margin: 5px 0; }
+    .rank-label { font-size: 0.9rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+    .lb-tabs { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+    .lb-tab { padding: 8px 22px; border: none; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7); border-radius: 50px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+    .lb-tab.active { background: linear-gradient(135deg, #60a5fa, #c084fc); color: white; }
+    .lb-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 25px; backdrop-filter: blur(12px); }
+    .lb-table { width: 100%; border-collapse: collapse; }
+    .lb-table th { text-align: left; padding: 12px 15px; color: rgba(255,255,255,0.5); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .lb-table td { padding: 14px 15px; color: white; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .lb-table tr:hover td { background: rgba(255,255,255,0.03); }
+    .rank-num { font-weight: 700; font-size: 1.1rem; }
+    .rank-1 { color: #fbbf24; }
+    .rank-2 { color: #94a3b8; }
+    .rank-3 { color: #cd7f32; }
+    .user-info { display: flex; align-items: center; gap: 10px; }
+    .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #9333ea); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.85rem; }
+    .points-badge { background: linear-gradient(135deg, rgba(96,165,250,0.15), rgba(192,132,252,0.15)); padding: 4px 14px; border-radius: 50px; font-weight: 600; color: #60a5fa; }
+    .current-user-row td { background: rgba(96,165,250,0.08) !important; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .trophy-icon { font-size: 1.3rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="lb-container">
+    <div class="lb-header">
+        <h1><i class="fas fa-trophy"></i> Leaderboard</h1>
+        <p>Compete with fellow learners and climb the ranks</p>
+    </div>
+
+    <div class="your-rank-card">
+        <p class="rank-label">Your Rank</p>
+        <h2>#{{ user_rank }}</h2>
+        <p><i class="fas fa-star" style="color: #fbbf24;"></i> {{ current_user.points or 0 }} Points | <i class="fas fa-fire" style="color: #f97316;"></i> {{ current_user.streak or 0 }} Day Streak</p>
+    </div>
+
+    <div class="lb-tabs">
+        <button class="lb-tab active" onclick="showLbTab('alltime', this)">All Time</button>
+        <button class="lb-tab" onclick="showLbTab('weekly', this)">This Week</button>
+    </div>
+
+    <div id="alltime-tab" class="tab-content active">
+        <div class="lb-card">
+            <table class="lb-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Student</th>
+                        <th>Points</th>
+                        <th>Streak</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in top_users %}
+                    <tr class="{{ 'current-user-row' if user.id == current_user.id }}">
+                        <td>
+                            {% if loop.index == 1 %}
+                                <span class="trophy-icon">&#x1F947;</span>
+                            {% elif loop.index == 2 %}
+                                <span class="trophy-icon">&#x1F948;</span>
+                            {% elif loop.index == 3 %}
+                                <span class="trophy-icon">&#x1F949;</span>
+                            {% else %}
+                                <span class="rank-num">{{ loop.index }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="user-info">
+                                <div class="user-avatar">{{ user.name[0] | upper }}</div>
+                                <span>{{ user.name }}{% if user.id == current_user.id %} (You){% endif %}</span>
+                            </div>
+                        </td>
+                        <td><span class="points-badge"><i class="fas fa-star"></i> {{ user.points or 0 }}</span></td>
+                        <td><i class="fas fa-fire" style="color: #f97316;"></i> {{ user.streak or 0 }} days</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not top_users %}
+                    <tr><td colspan="4" class="text-center" style="padding: 40px; color: rgba(255,255,255,0.4);">No data yet. Start learning to appear here!</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="weekly-tab" class="tab-content">
+        <div class="lb-card">
+            <table class="lb-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Student</th>
+                        <th>Weekly Score</th>
+                        <th>Sessions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in weekly_results %}
+                    <tr class="{{ 'current-user-row' if r[0] == current_user.id }}">
+                        <td>
+                            {% if loop.index == 1 %}
+                                <span class="trophy-icon">&#x1F947;</span>
+                            {% elif loop.index == 2 %}
+                                <span class="trophy-icon">&#x1F948;</span>
+                            {% elif loop.index == 3 %}
+                                <span class="trophy-icon">&#x1F949;</span>
+                            {% else %}
+                                <span class="rank-num">{{ loop.index }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="user-info">
+                                <div class="user-avatar">{{ r[1][0] | upper }}</div>
+                                <span>{{ r[1] }}</span>
+                            </div>
+                        </td>
+                        <td><span class="points-badge">{{ r[2] }}</span></td>
+                        <td>{{ r[3] }} sessions</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not weekly_results %}
+                    <tr><td colspan="4" class="text-center" style="padding: 40px; color: rgba(255,255,255,0.4);">No activity this week yet.</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showLbTab(tab, btn) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.lb-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById(tab + '-tab').classList.add('active');
+    btn.classList.add('active');
+}
+</script>
+{% endblock %}

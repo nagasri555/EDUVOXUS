@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}EduVoxus | AI Tutor{% endblock %}
+
+{% block head %}
+<style>
+    .chat-container { max-width: 900px; margin: 20px auto; padding: 0 20px; height: calc(100vh - 160px); display: flex; flex-direction: column; }
+    .chat-header { text-align: center; margin-bottom: 20px; }
+    .chat-header h1 { font-size: 2rem; font-weight: 700; color: white; }
+    .chat-header p { color: rgba(255,255,255,0.6); }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(12px); margin-bottom: 15px; }
+    .chat-msg { margin-bottom: 15px; display: flex; gap: 12px; }
+    .chat-msg.user { flex-direction: row-reverse; }
+    .chat-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
+    .chat-msg.user .chat-avatar { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .chat-msg.ai .chat-avatar { background: linear-gradient(135deg, #9333ea, #7e22ce); }
+    .chat-bubble { max-width: 75%; padding: 12px 18px; border-radius: 18px; font-size: 0.95rem; line-height: 1.6; }
+    .chat-msg.user .chat-bubble { background: rgba(59,130,246,0.15); color: white; border-bottom-right-radius: 4px; }
+    .chat-msg.ai .chat-bubble { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.9); border-bottom-left-radius: 4px; }
+    .chat-input-area { display: flex; gap: 12px; }
+    .chat-input-area input[type="text"] { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; padding: 14px 22px; color: white; font-size: 1rem; outline: none; }
+    .chat-input-area input[type="text"]::placeholder { color: rgba(255,255,255,0.3); }
+    .chat-input-area input[type="text"]:focus { border-color: rgba(96,165,250,0.5); box-shadow: 0 0 0 3px rgba(96,165,250,0.15); }
+    .chat-send-btn { background: linear-gradient(135deg, #3b82f6, #9333ea); border: none; border-radius: 50px; padding: 14px 28px; color: white; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+    .chat-send-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(96,165,250,0.4); }
+    .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .topic-selector { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; justify-content: center; }
+    .topic-chip { padding: 6px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; color: rgba(255,255,255,0.7); font-size: 0.85rem; cursor: pointer; transition: all 0.3s; }
+    .topic-chip:hover, .topic-chip.active { background: linear-gradient(135deg, #3b82f6, #9333ea); color: white; border-color: transparent; }
+    .typing-indicator { display: none; padding: 10px; color: rgba(255,255,255,0.5); font-style: italic; }
+    .typing-indicator.show { display: block; }
+    .chat-bubble pre { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; overflow-x: auto; margin: 8px 0; }
+    .chat-bubble code { color: #60a5fa; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="chat-header">
+        <h1><i class="fas fa-robot"></i> AI Tutor</h1>
+        <p>Ask any doubt - get instant, clear explanations</p>
+    </div>
+
+    <div class="topic-selector">
+        <span class="topic-chip active" onclick="setTopic(this, 'General')">General</span>
+        <span class="topic-chip" onclick="setTopic(this, 'DBMS')">DBMS</span>
+        <span class="topic-chip" onclick="setTopic(this, 'OS')">OS</span>
+        <span class="topic-chip" onclick="setTopic(this, 'DSA')">DSA</span>
+        <span class="topic-chip" onclick="setTopic(this, 'Python')">Python</span>
+        <span class="topic-chip" onclick="setTopic(this, 'Web Dev')">Web Dev</span>
+        <span class="topic-chip" onclick="setTopic(this, 'Machine Learning')">ML</span>
+        <span class="topic-chip" onclick="setTopic(this, 'Networking')">Networking</span>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+        {% for chat in history %}
+        <div class="chat-msg user">
+            <div class="chat-avatar"><i class="fas fa-user"></i></div>
+            <div class="chat-bubble">{{ chat.message }}</div>
+        </div>
+        <div class="chat-msg ai">
+            <div class="chat-avatar"><i class="fas fa-robot"></i></div>
+            <div class="chat-bubble">{{ chat.response }}</div>
+        </div>
+        {% endfor %}
+
+        {% if not history %}
+        <div class="text-center" style="padding: 60px 20px; color: rgba(255,255,255,0.4);">
+            <i class="fas fa-comments" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
+            <p>Start a conversation! Ask any question about your studies.</p>
+        </div>
+        {% endif %}
+
+        <div class="typing-indicator" id="typingIndicator">
+            <i class="fas fa-circle-notch fa-spin"></i> AI Tutor is thinking...
+        </div>
+    </div>
+
+    <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Ask your doubt here..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button class="chat-send-btn" id="sendBtn" onclick="sendMessage()">
+            <i class="fas fa-paper-plane"></i> Send
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentTopic = 'General';
+
+function setTopic(el, topic) {
+    currentTopic = topic;
+    document.querySelectorAll('.topic-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+}
+
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    const chatMessages = document.getElementById('chatMessages');
+
+    // Add user message
+    chatMessages.innerHTML += `
+        <div class="chat-msg user">
+            <div class="chat-avatar"><i class="fas fa-user"></i></div>
+            <div class="chat-bubble">${escapeHtml(msg)}</div>
+        </div>
+    `;
+
+    input.value = '';
+    document.getElementById('sendBtn').disabled = true;
+    document.getElementById('typingIndicator').classList.add('show');
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    fetch('/chatbot-ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, topic: currentTopic })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById('typingIndicator').classList.remove('show');
+        document.getElementById('sendBtn').disabled = false;
+
+        chatMessages.innerHTML += `
+            <div class="chat-msg ai">
+                <div class="chat-avatar"><i class="fas fa-robot"></i></div>
+                <div class="chat-bubble">${formatResponse(data.response)}</div>
+            </div>
+        `;
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    })
+    .catch(() => {
+        document.getElementById('typingIndicator').classList.remove('show');
+        document.getElementById('sendBtn').disabled = false;
+        chatMessages.innerHTML += `
+            <div class="chat-msg ai">
+                <div class="chat-avatar"><i class="fas fa-robot"></i></div>
+                <div class="chat-bubble">Sorry, something went wrong. Please try again.</div>
+            </div>
+        `;
+    });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatResponse(text) {
+    // Basic markdown-like formatting
+    text = escapeHtml(text);
+    text = text.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+    text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+    text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\n/g, '<br>');
+    return text;
+}
+</script>
+{% endblock %}
