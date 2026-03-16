@@ -2175,6 +2175,28 @@ def not_found(e):
 with app.app_context():
     db.create_all()
 
+    # Auto-migrate: add missing columns to existing tables (handles production upgrades)
+    from sqlalchemy import inspect, text
+    inspector = inspect(db.engine)
+    existing_columns = {col['name'] for col in inspector.get_columns('user')}
+    if 'plain_password' not in existing_columns:
+        with db.engine.connect() as conn:
+            conn.execute(text('ALTER TABLE "user" ADD COLUMN plain_password VARCHAR(200)'))
+            conn.commit()
+        logging.info("Migrated: added plain_password column to user table")
+
+    existing_flashcard_cols = {col['name'] for col in inspector.get_columns('flashcard')}
+    for col_name, col_def in [
+        ('easiness_factor', 'FLOAT DEFAULT 2.5'),
+        ('interval', 'INTEGER DEFAULT 0'),
+        ('review_count', 'INTEGER DEFAULT 0'),
+    ]:
+        if col_name not in existing_flashcard_cols:
+            with db.engine.connect() as conn:
+                conn.execute(text(f'ALTER TABLE flashcard ADD COLUMN {col_name} {col_def}'))
+                conn.commit()
+            logging.info(f"Migrated: added {col_name} column to flashcard table")
+
     # Create default admin if not exists
     admin = User.query.filter_by(email="admin@eduvoxus.com").first()
     if not admin:
