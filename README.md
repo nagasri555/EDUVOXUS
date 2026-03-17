@@ -39,7 +39,7 @@
 
 ## Machine Learning Algorithms & Novel Techniques
 
-> **EduVoxus implements 6 real ML/statistical algorithms from scratch (no sklearn/scipy) — a key differentiator from all existing e-learning platforms.**
+> **EduVoxus implements 10 real ML/statistical algorithms from scratch (no sklearn/scipy) — a key differentiator from all existing e-learning platforms.**
 
 ### 1. EWMA-Based Adaptive Difficulty Engine
 
@@ -194,7 +194,103 @@ Algorithm: CollabFilter_Recommend(user_id)
 
 **What makes it unique:** Implements "Students like you also studied..." — the same algorithm used by Netflix and Amazon, applied to educational topic discovery.
 
-### 7. Multi-Modal AI Evaluation Pipeline
+### 7. Bayesian Knowledge Tracing (BKT)
+
+Estimates per-topic **mastery probability** using a Hidden Markov Model — the same algorithm used by **Khan Academy**:
+
+```
+Algorithm: BKT_MasteryEstimation(user_id)
+-----------------------------------------------
+Parameters (literature defaults):
+  P(L0)  = 0.1   — prior probability of knowing
+  P(T)   = 0.2   — learning rate per attempt
+  P(G)   = 0.15  — guess probability
+  P(S)   = 0.10  — slip probability
+
+For each topic:
+  1. Initialize P(L) = P(L0)
+  2. For each attempt (correct if score >= 6):
+     If correct:
+       P(L|correct) = P(L)*(1-P(S)) / [P(L)*(1-P(S)) + (1-P(L))*P(G)]
+     If incorrect:
+       P(L|incorrect) = P(L)*P(S) / [P(L)*P(S) + (1-P(L))*(1-P(G))]
+     Apply transition: P(L) = P(L|obs) + (1-P(L|obs)) * P(T)
+  3. Label: Mastered (≥85%), Learning (≥50%), Needs Work (<50%)
+```
+
+**What makes it unique:** Goes beyond simple score averages to probabilistically model whether a student has truly *learned* a topic, accounting for guessing and slipping.
+
+### 8. Ebbinghaus Forgetting Curve
+
+Predicts **when a student will forget** a topic and recommends optimal review timing:
+
+```
+Algorithm: ForgettingCurve_Predict(user_id)
+-----------------------------------------------
+Formula: R(t) = e^(-t / S)
+  R = retention probability (0 to 1)
+  t = days since last study
+  S = memory strength
+
+Memory Strength:
+  S = base_strength * (1 + 0.5 * repetitions) * (avg_score / 7)
+  base_strength = 3.0 days
+
+Optimal Review Time:
+  t_review = -S * ln(0.7)  (when retention drops to 70%)
+
+Output per topic:
+  - retention%  (current estimated memory)
+  - review_urgency: overdue (<50%) | soon (<70%) | ok (≥70%)
+  - days_until_review
+```
+
+**What makes it unique:** Proactively tells students *when* to review each topic before they forget — no other platform uses decay-based scheduling for general practice.
+
+### 9. Markov Chain Topic Predictor
+
+Builds a **first-order Markov Chain** from the user's study sequence to predict the next topic:
+
+```
+Algorithm: MarkovChain_TopicPredictor(user_id)
+-----------------------------------------------
+1. Extract ordered topic sequence: [T1, T2, T3, T1, T4, ...]
+2. Build transition matrix:
+   T[i][j] = count(i → j) / total(transitions from i)
+3. Apply Laplace smoothing (α = 0.1):
+   T_smooth[i][j] = (count + α) / (total + α * |topics|)
+4. From current topic, return top-3 by transition probability
+```
+
+**What makes it unique:** Captures study flow patterns — if a student always studies "Data Structures" after "Algorithms", the system learns and suggests this.
+
+### 10. Gaussian Naive Bayes Risk Classifier
+
+Classifies students into **At-Risk / On-Track / Excelling** using 4 features:
+
+```
+Algorithm: NaiveBayes_RiskClassify(user_id)
+-----------------------------------------------
+Features:
+  x1 = avg_score          (0-10)
+  x2 = score_variance     (consistency)
+  x3 = study_frequency    (sessions/week)
+  x4 = recent_trend       (slope of last 5 scores)
+
+Class priors: At-Risk=0.25, On-Track=0.50, Excelling=0.25
+
+P(class | X) ∝ P(class) * Π Gaussian(xi | μ_class, σ_class)
+
+Gaussian PDF: (1/σ√2π) * e^(-½((x-μ)/σ)²)
+
+Log-sum-exp normalization for numerical stability:
+  log P(C|X) = log P(C) + Σ log P(xi|C)
+  Normalize via max-subtraction trick
+```
+
+**What makes it unique:** Multi-feature risk detection identifies struggling students before they fail, enabling early intervention.
+
+### 11. Multi-Modal AI Evaluation Pipeline (System)
 
 Voice answers go through a unique evaluation pipeline:
 
@@ -216,7 +312,7 @@ Algorithm: VoiceEvaluation(questions[], spoken_answers[])
 
 **What makes it unique:** No e-learning platform combines speech-to-text + AI evaluation + per-question feedback in a single flow.
 
-### 8. Token Bucket Rate Limiter
+### 12. Token Bucket Rate Limiter (System)
 
 ```
 Algorithm: TokenBucketRateLimit(key, max_requests, window_seconds)
@@ -235,7 +331,7 @@ Applied to:
   - Notes:      5 requests / 60 seconds (per user)
 ```
 
-### 9. Dynamic Badge Achievement System
+### 13. Dynamic Badge Achievement System (System)
 
 ```
 Algorithm: BadgeEngine(user)
@@ -272,7 +368,7 @@ Process:
 | **AI Flashcards** | Generate decks with flip animation + spaced repetition | Yes |
 | **AI Study Notes** | Comprehensive markdown notes with print support | Yes |
 
-### Platform Features (18 Features)
+### Platform Features (22 Features)
 
 | # | Feature | ML Algorithm | Description |
 |---|---------|:------------:|-------------|
@@ -283,17 +379,21 @@ Process:
 | 5 | **Score Predictor** | Linear Regression | Predicts next score with trend analysis and R² confidence |
 | 6 | **Learner Classification** | K-Means (K-Means++) | Unsupervised clustering into Advanced/Intermediate/Beginner tiers |
 | 7 | **Collaborative Filtering** | Pearson Correlation | "Students like you also studied..." recommendations |
-| 8 | **Voice Recognition** | Web Speech API | Browser-based speech-to-text for voice practice |
-| 9 | **AI Chatbot Tutor** | GPT-4o-mini | Ask any doubt, get instant AI explanations |
-| 10 | **Gamification** | Rule Engine | Points, streaks, 7 badges, competitive leaderboard |
-| 11 | **Discussion Forum** | - | Community Q&A with AI-powered auto-answers |
-| 12 | **Course Management** | - | Teacher/admin course creation with file uploads |
-| 13 | **Study Notes Generator** | GPT-4o-mini | AI generates structured markdown notes on any topic |
-| 14 | **Timed Exam Mode** | - | Countdown timer with visual urgency indicators |
-| 15 | **Bookmarks** | - | Save questions from any mode for later revision |
-| 16 | **Certificate Generation** | - | Printable certificates for scores >= 7/10 |
-| 17 | **Progress PDF Export** | FPDF2 | Download complete performance report as PDF |
-| 18 | **Admin Dashboard** | - | User management, analytics, contact messages |
+| 8 | **Topic Mastery Estimation** | Bayesian Knowledge Tracing | Hidden Markov Model for per-topic mastery probability |
+| 9 | **Memory Retention Tracker** | Ebbinghaus Forgetting Curve | Predicts when you'll forget and schedules optimal reviews |
+| 10 | **Study Pattern Predictor** | Markov Chain | Predicts next topic based on transition probabilities |
+| 11 | **Risk Classification** | Gaussian Naive Bayes | Multi-feature at-risk/on-track/excelling classification |
+| 12 | **Voice Recognition** | Web Speech API | Browser-based speech-to-text for voice practice |
+| 13 | **AI Chatbot Tutor** | GPT-4o-mini | Ask any doubt, get instant AI explanations |
+| 14 | **Gamification** | Rule Engine | Points, streaks, 7 badges, competitive leaderboard |
+| 15 | **Discussion Forum** | - | Community Q&A with AI-powered auto-answers |
+| 16 | **Course Management** | - | Teacher/admin course creation with file uploads |
+| 17 | **Study Notes Generator** | GPT-4o-mini | AI generates structured markdown notes on any topic |
+| 18 | **Timed Exam Mode** | - | Countdown timer with visual urgency indicators |
+| 19 | **Bookmarks** | - | Save questions from any mode for later revision |
+| 20 | **Certificate Generation** | - | Printable certificates for scores >= 7/10 |
+| 21 | **Progress PDF Export** | FPDF2 | Download complete performance report as PDF |
+| 22 | **Admin Dashboard** | - | User management, analytics, contact messages |
 
 ---
 
@@ -324,6 +424,10 @@ Process:
 | **Linear Regression (OLS)** | Score trend prediction and trajectory analysis |
 | **K-Means Clustering (K-Means++)** | Unsupervised learner classification into performance tiers |
 | **Collaborative Filtering (Pearson)** | User-based "students like you" topic recommendations |
+| **Bayesian Knowledge Tracing (BKT)** | Hidden Markov Model for per-topic mastery probability estimation |
+| **Ebbinghaus Forgetting Curve** | Exponential decay model for memory retention and review scheduling |
+| **Markov Chain** | First-order topic transition predictor with Laplace smoothing |
+| **Gaussian Naive Bayes** | Probabilistic risk classifier (at-risk / on-track / excelling) |
 
 ### Frontend
 
@@ -421,7 +525,7 @@ Total: 12 Models | 45+ Columns | 15 Indexed Fields | Full Cascade Deletes
 ```
 EDUVOXUS/
 |
-|-- app.py                         # Main Flask application (1900+ lines, 45+ routes, 6 ML algorithms)
+|-- app.py                         # Main Flask application (2200+ lines, 45+ routes, 10 ML algorithms)
 |-- generate_report.py             # PDF academic report generator
 |-- requirements.txt               # Python dependencies
 |-- .env                           # Environment variables (OPENAI_API_KEY)
@@ -674,7 +778,7 @@ Password: admin123
 
 ## Unique Selling Points (USP)
 
-1. **6 ML Algorithms from Scratch** - EWMA, SM-2, TF-IDF, Linear Regression, K-Means, Collaborative Filtering — all implemented without sklearn/scipy.
+1. **10 ML Algorithms from Scratch** - EWMA, SM-2, TF-IDF, Linear Regression, K-Means, Collaborative Filtering, Bayesian Knowledge Tracing, Forgetting Curve, Markov Chain, Naive Bayes — all implemented without sklearn/scipy.
 2. **Zero Content Dependency** - No pre-loaded question banks. Works on ANY topic instantly via AI generation.
 3. **Multi-Modal Learning** - 6 distinct learning modes in one platform (Quiz, Timed, Voice, Theory, Flashcards, Notes).
 4. **EWMA Adaptive Difficulty** - Exponentially weighted, per-topic difficulty with consistency bonuses — far beyond simple averaging.

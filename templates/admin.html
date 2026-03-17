@@ -5,7 +5,7 @@
 <style>
     .admin-container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
     .admin-header h1 { color: white; font-size: 2rem; font-weight: 700; margin-bottom: 25px; }
-    .admin-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 30px; }
+    .admin-stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; margin-bottom: 30px; }
     .admin-stat { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; text-align: center; backdrop-filter: blur(12px); }
     .admin-stat-icon { font-size: 1.5rem; margin-bottom: 8px; }
     .admin-stat-val { font-size: 2rem; font-weight: 700; color: white; }
@@ -27,6 +27,15 @@
     .msg-text { color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-top: 4px; }
     .msg-time { color: rgba(255,255,255,0.4); font-size: 0.8rem; margin-top: 4px; }
     .admin-link { color: #60a5fa; text-decoration: none; font-size: 0.85rem; font-weight: 600; }
+    .approve-btn { padding: 6px 16px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; border-radius: 50px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+    .approve-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(34,197,94,0.3); }
+    .reject-btn { padding: 6px 16px; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; border-radius: 50px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+    .reject-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
+    .status-badge { padding: 3px 10px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
+    .status-pending { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    .status-approved { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .status-rejected { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .pending-alert { background: linear-gradient(135deg, rgba(251,191,36,0.1), rgba(251,191,36,0.03)); border: 1px solid rgba(251,191,36,0.3); border-radius: 14px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
     @media (max-width: 768px) {
         .admin-stats { grid-template-columns: repeat(2, 1fr); }
         .admin-grid { grid-template-columns: 1fr; }
@@ -66,7 +75,55 @@
             <div class="admin-stat-val">{{ total_contacts }}</div>
             <div class="admin-stat-label">Unread Messages</div>
         </div>
+        <div class="admin-stat" {% if pending_registrations > 0 %}style="border-color: rgba(251,191,36,0.4);"{% endif %}>
+            <div class="admin-stat-icon" style="color: #fbbf24;"><i class="fas fa-user-clock"></i></div>
+            <div class="admin-stat-val" style="{% if pending_registrations > 0 %}color: #fbbf24;{% endif %}">{{ pending_registrations }}</div>
+            <div class="admin-stat-label">Pending Registrations</div>
+        </div>
     </div>
+
+    {% if pending_registrations > 0 %}
+    <div class="pending-alert">
+        <i class="fas fa-exclamation-triangle" style="color: #fbbf24; font-size: 1.2rem;"></i>
+        <div>
+            <span style="color: white; font-weight: 600;">New registration request pending approval</span>
+            <span style="color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-left: 8px;">Pending Registrations: {{ pending_registrations }}</span>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if pending_users %}
+    <div class="admin-card" style="margin-bottom: 20px;">
+        <h3 style="color: white; font-size: 1.1rem; font-weight: 600; margin-bottom: 15px;">
+            <i class="fas fa-user-clock" style="color: #fbbf24; margin-right: 8px;"></i> Pending Registrations
+        </h3>
+        <table class="admin-table">
+            <thead>
+                <tr><th>Name</th><th>Email</th><th>Role</th><th>Registered</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for u in pending_users %}
+                <tr>
+                    <td>{{ u.name }}</td>
+                    <td>{{ u.email }}</td>
+                    <td><span class="role-badge role-{{ u.role }}">{{ u.role }}</span></td>
+                    <td>{{ u.created_at.strftime("%b %d, %Y") if u.created_at else 'N/A' }}</td>
+                    <td>
+                        <div style="display: flex; gap: 8px;">
+                            <form method="POST" action="/admin/user/{{ u.id }}/approve" style="display: inline;">
+                                <button type="submit" class="approve-btn"><i class="fas fa-check"></i> Approve</button>
+                            </form>
+                            <form method="POST" action="/admin/user/{{ u.id }}/reject" style="display: inline;" onsubmit="return confirm('Reject {{ u.name }}?');">
+                                <button type="submit" class="reject-btn"><i class="fas fa-times"></i> Reject</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 
     <div class="admin-grid">
         <div class="admin-card">

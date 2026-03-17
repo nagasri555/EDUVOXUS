@@ -57,6 +57,29 @@ login_manager.login_view = "login"
 
 
 # -------------------------------------------------
+# APPROVAL CHECK MIDDLEWARE
+# -------------------------------------------------
+@app.before_request
+def check_user_approval():
+    """Block pending/rejected users from accessing any protected route."""
+    # Allow unauthenticated routes and static files
+    open_endpoints = {'login', 'register', 'setup_admin', 'logout', 'static', 'home'}
+    if request.endpoint in open_endpoints or request.endpoint is None:
+        return None
+    if current_user.is_authenticated:
+        status = getattr(current_user, 'status', 'approved')
+        if status == 'pending':
+            logout_user()
+            flash("Your approval is pending. Please contact the administrator for more information.", "warning")
+            return redirect("/login")
+        elif status == 'rejected':
+            logout_user()
+            flash("Your registration was rejected. Please contact the administrator.", "error")
+            return redirect("/login")
+    return None
+
+
+# -------------------------------------------------
 # SECURITY HEADERS
 # -------------------------------------------------
 @app.after_request
@@ -134,6 +157,7 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(200))
     plain_password = db.Column(db.String(200), nullable=True)  # Plain text for admin reference
     role = db.Column(db.String(20), default='student')  # student, teacher, admin
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
     points = db.Column(db.Integer, default=0)
     streak = db.Column(db.Integer, default=0)
     last_active = db.Column(db.DateTime, default=datetime.utcnow)
@@ -282,6 +306,7 @@ def admin_required(f):
             abort(403)
         return f(*args, **kwargs)
     return decorated_function
+
 
 
 # -------------------------------------------------
@@ -821,55 +846,369 @@ def collaborative_filtering_recommend(user_id, top_n=5):
     return [{"topic": t, "predicted_score": round(s, 1)} for t, s in recommendations]
 
 
+# -------------------------------------------------
+# ML ALGORITHM 5: BAYESIAN KNOWLEDGE TRACING (BKT)
+# Per-topic mastery estimation (used by Khan Academy)
+# -------------------------------------------------
+def bayesian_knowledge_tracing(user_id):
+    """
+    Bayesian Knowledge Tracing estimates the probability a student has
+    mastered each topic, based on their sequence of correct/incorrect responses.
+
+    Hidden state: L (learned/mastered) — binary latent variable per topic.
+    Parameters (standard BKT defaults from literature):
+        P(L0)  = 0.1   — prior probability of mastery before any practice
+        P(T)   = 0.2   — probability of transitioning from unlearned to learned on each attempt
+        P(G)   = 0.15  — probability of guessing correctly despite not knowing
+        P(S)   = 0.10  — probability of slipping (wrong answer despite knowing)
+
+    Update rules (forward algorithm):
+        P(L|correct)   = P(L) * (1 - P(S)) / P(correct)
+        P(L|incorrect) = P(L) * P(S) / P(incorrect)
+        After each observation: P(L) = P(L|obs) + (1 - P(L|obs)) * P(T)
+    """
+    results = InterviewResult.query.filter_by(user_id=user_id)\
+        .order_by(InterviewResult.date.asc()).all()
+
+    if not results:
+        return {}
+
+    # Group results by topic, preserving order
+    topic_sequences = {}
+    for r in results:
+        if r.topic not in topic_sequences:
+            topic_sequences[r.topic] = []
+        # Treat score >= 6/10 as "correct" (mastery-level response)
+        topic_sequences[r.topic].append(r.score >= 6)
+
+    # BKT parameters
+    p_l0 = 0.1   # Prior knowledge
+    p_t = 0.2    # Learning/transition rate
+    p_g = 0.15   # Guess rate
+    p_s = 0.10   # Slip rate
+
+    mastery = {}
+    for topic, observations in topic_sequences.items():
+        p_l = p_l0  # Start with prior
+
+        for correct in observations:
+            if correct:
+                # P(correct) = P(L)*(1-P(S)) + (1-P(L))*P(G)
+                p_correct = p_l * (1 - p_s) + (1 - p_l) * p_g
+                if p_correct > 0:
+                    p_l = (p_l * (1 - p_s)) / p_correct
+            else:
+                # P(incorrect) = P(L)*P(S) + (1-P(L))*(1-P(G))
+                p_incorrect = p_l * p_s + (1 - p_l) * (1 - p_g)
+                if p_incorrect > 0:
+                    p_l = (p_l * p_s) / p_incorrect
+
+            # Apply learning transition
+            p_l = p_l + (1 - p_l) * p_t
+
+        mastery[topic] = {
+            "mastery_probability": round(p_l, 3),
+            "mastered": p_l >= 0.85,
+            "attempts": len(observations),
+            "label": "Mastered" if p_l >= 0.85 else "Learning" if p_l >= 0.5 else "Needs Work"
+        }
+
+    return mastery
+
+
+# -------------------------------------------------
+# ML ALGORITHM 6: EBBINGHAUS FORGETTING CURVE
+# Predicts when a student will forget a topic
+# -------------------------------------------------
+def forgetting_curve_predict(user_id):
+    """
+    Ebbinghaus Forgetting Curve models memory retention over time.
+
+    Formula: R(t) = e^(-t / S)
+    Where:
+        R = retention probability (0 to 1)
+        t = time elapsed since last study (in days)
+        S = memory strength (stability), which increases with repetitions and higher scores
+
+    Memory Strength formula:
+        S = base_strength * (1 + 0.5 * repetitions) * score_factor
+        base_strength = 3.0 days (default half-life)
+        score_factor = avg_score / 7 (normalized around passing)
+
+    Returns topics sorted by urgency (lowest retention first),
+    with recommended review dates.
+    """
+    results = InterviewResult.query.filter_by(user_id=user_id)\
+        .order_by(InterviewResult.date.asc()).all()
+
+    if not results:
+        return []
+
+    # Group by topic: get last study date, repetition count, avg score
+    topic_data = {}
+    for r in results:
+        if r.topic not in topic_data:
+            topic_data[r.topic] = {"scores": [], "last_date": r.date, "count": 0}
+        topic_data[r.topic]["scores"].append(r.score)
+        topic_data[r.topic]["last_date"] = r.date
+        topic_data[r.topic]["count"] += 1
+
+    now = datetime.utcnow()
+    predictions = []
+    base_strength = 3.0  # Base half-life in days
+
+    for topic, data in topic_data.items():
+        avg_score = sum(data["scores"]) / len(data["scores"])
+        repetitions = data["count"]
+        days_elapsed = max((now - data["last_date"]).total_seconds() / 86400, 0.01)
+
+        # Memory strength increases with repetitions and score quality
+        score_factor = max(avg_score / 7.0, 0.3)  # Floor at 0.3 to prevent near-zero
+        strength = base_strength * (1 + 0.5 * min(repetitions, 20)) * score_factor
+
+        # Retention = e^(-t/S)
+        retention = math.exp(-days_elapsed / strength)
+
+        # Optimal review time: when retention drops to 0.7 (70%)
+        # 0.7 = e^(-t_review / S)  =>  t_review = -S * ln(0.7)
+        optimal_review_days = -strength * math.log(0.7)
+        days_until_review = max(optimal_review_days - days_elapsed, 0)
+
+        predictions.append({
+            "topic": topic,
+            "retention": round(retention * 100, 1),  # as percentage
+            "strength": round(strength, 1),
+            "days_since_study": round(days_elapsed, 1),
+            "days_until_review": round(days_until_review, 1),
+            "review_urgency": "overdue" if retention < 0.5 else "soon" if retention < 0.7 else "ok",
+            "last_studied": data["last_date"].strftime("%b %d, %Y")
+        })
+
+    # Sort by retention ascending (most forgotten first)
+    predictions.sort(key=lambda x: x["retention"])
+    return predictions
+
+
+# -------------------------------------------------
+# ML ALGORITHM 7: MARKOV CHAIN TOPIC PREDICTOR
+# Predicts next best topic based on study transitions
+# -------------------------------------------------
+def markov_topic_predict(user_id, top_n=3):
+    """
+    Builds a first-order Markov Chain from the user's topic study sequence.
+
+    A Markov Chain models transitions between states (topics). The transition
+    probability P(next_topic | current_topic) is estimated from historical
+    study sequences.
+
+    Transition matrix: T[i][j] = count(i -> j) / count(transitions from i)
+
+    Uses Laplace smoothing to handle unseen transitions:
+        T_smooth[i][j] = (count(i -> j) + alpha) / (count(i) + alpha * |topics|)
+        alpha = 0.1 (small smoothing to avoid zero probabilities)
+
+    Returns top-N predicted next topics with probabilities.
+    """
+    results = InterviewResult.query.filter_by(user_id=user_id)\
+        .order_by(InterviewResult.date.asc()).all()
+
+    if len(results) < 3:
+        return []
+
+    # Build transition counts
+    topics = list(set(r.topic for r in results))
+    if len(topics) < 2:
+        return []
+
+    transition_counts = defaultdict(lambda: defaultdict(int))
+    for i in range(len(results) - 1):
+        from_topic = results[i].topic
+        to_topic = results[i + 1].topic
+        transition_counts[from_topic][to_topic] += 1
+
+    # Current topic (most recent)
+    current_topic = results[-1].topic
+
+    # Compute transition probabilities with Laplace smoothing
+    alpha = 0.1
+    n_topics = len(topics)
+    from_counts = transition_counts.get(current_topic, {})
+    total_from = sum(from_counts.values())
+
+    probabilities = []
+    for topic in topics:
+        count = from_counts.get(topic, 0)
+        prob = (count + alpha) / (total_from + alpha * n_topics)
+        probabilities.append((topic, prob))
+
+    # Sort by probability descending, exclude current topic
+    probabilities = [(t, p) for t, p in probabilities if t != current_topic]
+    probabilities.sort(key=lambda x: x[1], reverse=True)
+
+    return [
+        {"topic": t, "probability": round(p * 100, 1)}
+        for t, p in probabilities[:top_n]
+    ]
+
+
+# -------------------------------------------------
+# ML ALGORITHM 8: NAIVE BAYES RISK CLASSIFIER
+# Classifies students as at-risk, on-track, or excelling
+# -------------------------------------------------
+def naive_bayes_risk_classify(user_id):
+    """
+    Gaussian Naive Bayes classifier that estimates student risk level
+    using multiple features.
+
+    Features:
+        1. Average score (0-10)
+        2. Score variance (consistency)
+        3. Study frequency (sessions per week)
+        4. Trend (slope from last 5 sessions)
+
+    Prior class distributions (from educational research baselines):
+        - At-Risk:   avg=3.5, var_high=5.0, freq_low=1.0
+        - On-Track:  avg=6.0, var_med=2.0,  freq_med=3.0
+        - Excelling: avg=8.5, var_low=1.0,  freq_high=5.0
+
+    P(class | features) ∝ P(class) * Π P(feature_i | class)
+    where P(feature | class) = Gaussian PDF with class-specific μ and σ
+    """
+    results = InterviewResult.query.filter_by(user_id=user_id)\
+        .order_by(InterviewResult.date.asc()).all()
+
+    if len(results) < 3:
+        return None
+
+    scores = [r.score for r in results]
+    avg_score = sum(scores) / len(scores)
+    variance = sum((s - avg_score) ** 2 for s in scores) / len(scores)
+
+    # Study frequency: sessions per week
+    first_date = results[0].date
+    last_date = results[-1].date
+    weeks = max((last_date - first_date).total_seconds() / (7 * 86400), 1)
+    frequency = len(results) / weeks
+
+    # Trend: slope of last 5 scores
+    recent = scores[-5:] if len(scores) >= 5 else scores
+    n = len(recent)
+    x_mean = (n - 1) / 2
+    y_mean = sum(recent) / n
+    numerator = sum((i - x_mean) * (recent[i] - y_mean) for i in range(n))
+    denominator = sum((i - x_mean) ** 2 for i in range(n))
+    trend = numerator / denominator if denominator > 0 else 0
+
+    # Gaussian PDF helper
+    def gaussian_pdf(x, mu, sigma):
+        sigma = max(sigma, 0.01)  # prevent division by zero
+        return (1 / (sigma * math.sqrt(2 * math.pi))) * \
+               math.exp(-0.5 * ((x - mu) / sigma) ** 2)
+
+    # Class definitions: (prior, mean_score, std_score, mean_var, std_var, mean_freq, std_freq, mean_trend, std_trend)
+    classes = {
+        "at-risk": {
+            "prior": 0.25,
+            "params": {"score": (3.5, 1.5), "variance": (5.0, 2.0), "frequency": (1.0, 0.8), "trend": (-0.5, 0.5)}
+        },
+        "on-track": {
+            "prior": 0.50,
+            "params": {"score": (6.0, 1.5), "variance": (2.0, 1.5), "frequency": (3.0, 1.5), "trend": (0.2, 0.4)}
+        },
+        "excelling": {
+            "prior": 0.25,
+            "params": {"score": (8.5, 1.0), "variance": (1.0, 1.0), "frequency": (5.0, 2.0), "trend": (0.5, 0.4)}
+        }
+    }
+
+    features = {"score": avg_score, "variance": variance, "frequency": frequency, "trend": trend}
+
+    # Compute posterior for each class
+    posteriors = {}
+    for cls, config in classes.items():
+        log_posterior = math.log(config["prior"])
+        for feat_name, feat_val in features.items():
+            mu, sigma = config["params"][feat_name]
+            pdf = gaussian_pdf(feat_val, mu, sigma)
+            log_posterior += math.log(max(pdf, 1e-300))  # Avoid log(0)
+        posteriors[cls] = log_posterior
+
+    # Normalize with log-sum-exp for numerical stability
+    max_log = max(posteriors.values())
+    exp_sum = sum(math.exp(v - max_log) for v in posteriors.values())
+    probabilities = {
+        cls: round(math.exp(v - max_log) / exp_sum, 3)
+        for cls, v in posteriors.items()
+    }
+
+    predicted_class = max(probabilities, key=probabilities.get)
+
+    return {
+        "classification": predicted_class,
+        "probabilities": probabilities,
+        "features": {
+            "avg_score": round(avg_score, 1),
+            "score_variance": round(variance, 1),
+            "study_frequency": round(frequency, 1),
+            "recent_trend": round(trend, 2)
+        }
+    }
+
+
 # =================================================================
 # ROUTES - AUTHENTICATION
 # =================================================================
 
-@app.route("/signup", methods=["GET", "POST"])
-def signup():
+@app.route("/register", methods=["GET", "POST"])
+def register():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip().lower()
         raw_password = request.form.get("password", "")
         role = request.form.get("role", "student").strip().lower()
 
-        # Only allow student or teacher via signup (admin is created manually)
+        # Only allow student or teacher via registration (admin is created manually)
         if role not in ("student", "teacher"):
             role = "student"
 
         # Validate inputs
         if not name or len(name) > 100:
             flash("Please enter a valid name (max 100 characters).", "error")
-            return redirect("/signup")
+            return redirect("/register")
 
         if not validate_email(email):
             flash("Please enter a valid email address.", "error")
-            return redirect("/signup")
+            return redirect("/register")
 
         is_valid, msg = validate_password(raw_password)
         if not is_valid:
             flash(msg, "error")
-            return redirect("/signup")
+            return redirect("/register")
 
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
             flash("Email already registered.", "error")
-            return redirect("/signup")
+            return redirect("/register")
 
         password = generate_password_hash(raw_password)
-        user = User(name=name, email=email, password=password, plain_password=raw_password, role=role, points=0, streak=0)
+        user = User(name=name, email=email, password=password, plain_password=raw_password, role=role, status='pending', points=0, streak=0)
         db.session.add(user)
         db.session.commit()
-        logging.info(f"New user registered: {email}")
+        logging.info(f"New user registered (pending approval): {email}")
 
-        flash("Account created successfully! Please login.", "success")
+        flash("Successfully registered. Please wait for admin approval before logging in.", "success")
         return redirect("/login")
 
-    return render_template("signup.html")
+    return render_template("register.html")
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    # Check if any admin exists — if not, redirect to admin setup
+    admin_exists = User.query.filter_by(role="admin").first()
+    if not admin_exists:
+        return redirect("/setup-admin")
+
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
@@ -882,6 +1221,14 @@ def login():
 
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password, password):
+            # Check approval status before allowing login
+            if user.status == 'pending':
+                flash("Your approval is pending. Please contact the administrator for more information.", "warning")
+                return redirect("/login")
+            elif user.status == 'rejected':
+                flash("Your registration was rejected. Please contact the administrator.", "error")
+                return redirect("/login")
+
             login_user(user)
             update_streak(user)
             logging.info(f"User logged in: {email}")
@@ -891,6 +1238,62 @@ def login():
         return redirect("/login")
 
     return render_template("login.html")
+
+
+@app.route("/setup-admin", methods=["GET", "POST"])
+def setup_admin():
+    # If admin already exists, block access to this page
+    admin_exists = User.query.filter_by(role="admin").first()
+    if admin_exists:
+        return redirect("/login")
+
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        raw_password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        # Validate inputs
+        if not name or len(name) > 100:
+            flash("Please enter a valid name (max 100 characters).", "error")
+            return redirect("/setup-admin")
+
+        if not validate_email(email):
+            flash("Please enter a valid email address.", "error")
+            return redirect("/setup-admin")
+
+        is_valid, msg = validate_password(raw_password)
+        if not is_valid:
+            flash(msg, "error")
+            return redirect("/setup-admin")
+
+        if raw_password != confirm_password:
+            flash("Passwords do not match.", "error")
+            return redirect("/setup-admin")
+
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            flash("Email already registered.", "error")
+            return redirect("/setup-admin")
+
+        admin = User(
+            name=name,
+            email=email,
+            password=generate_password_hash(raw_password),
+            plain_password=raw_password,
+            role="admin",
+            status="approved",
+            points=0,
+            streak=0
+        )
+        db.session.add(admin)
+        db.session.commit()
+        logging.info(f"Admin account created: {email}")
+
+        flash("Admin account created successfully! Please login.", "success")
+        return redirect("/login")
+
+    return render_template("setup_admin.html")
 
 
 @app.route("/logout")
@@ -908,6 +1311,10 @@ def logout():
 def home():
     if current_user.is_authenticated:
         return render_template("index.html")
+    # If no admin exists yet, go to setup first
+    admin_exists = User.query.filter_by(role="admin").first()
+    if not admin_exists:
+        return redirect("/setup-admin")
     return redirect("/login")
 
 
@@ -1313,6 +1720,18 @@ def recommendations():
         if pred:
             topic_predictions[topic] = pred
 
+    # 7. Bayesian Knowledge Tracing: Per-topic mastery
+    bkt_mastery = bayesian_knowledge_tracing(current_user.id)
+
+    # 8. Ebbinghaus Forgetting Curve: Memory retention
+    forgetting_data = forgetting_curve_predict(current_user.id)
+
+    # 9. Markov Chain: Next topic prediction
+    markov_predictions = markov_topic_predict(current_user.id, top_n=3)
+
+    # 10. Naive Bayes: Risk classification
+    risk_profile = naive_bayes_risk_classify(current_user.id)
+
     return render_template(
         "recommendations.html",
         score_prediction=score_prediction,
@@ -1320,7 +1739,11 @@ def recommendations():
         collab_recommendations=collab_recommendations,
         user_tier=user_tier,
         weak_topics=weak_topics,
-        topic_predictions=topic_predictions
+        topic_predictions=topic_predictions,
+        bkt_mastery=bkt_mastery,
+        forgetting_data=forgetting_data,
+        markov_predictions=markov_predictions,
+        risk_profile=risk_profile
     )
 
 
@@ -1333,7 +1756,11 @@ def api_recommendations():
         "similar_topics": get_similar_topics(current_user.id, top_n=3),
         "collab_recommendations": collaborative_filtering_recommend(current_user.id, top_n=3),
         "user_tier": classify_learners().get(current_user.id),
-        "weak_topics": get_weak_topics(current_user.id)[:3]
+        "weak_topics": get_weak_topics(current_user.id)[:3],
+        "bkt_mastery": bayesian_knowledge_tracing(current_user.id),
+        "forgetting_curve": forgetting_curve_predict(current_user.id)[:3],
+        "markov_predictions": markov_topic_predict(current_user.id, top_n=3),
+        "risk_profile": naive_bayes_risk_classify(current_user.id)
     })
 
 
@@ -1764,6 +2191,10 @@ def admin_dashboard():
     total_courses = Course.query.count()
     total_posts = ForumPost.query.count()
     total_contacts = ContactMessage.query.filter_by(is_read=False).count()
+    pending_registrations = User.query.filter_by(status='pending').count()
+
+    # Pending users list for approval panel
+    pending_users = User.query.filter_by(status='pending').order_by(User.created_at.desc()).all()
 
     recent_users = User.query.order_by(User.created_at.desc()).limit(10).all()
     recent_results = db.session.query(InterviewResult, User).join(User).order_by(
@@ -1789,6 +2220,8 @@ def admin_dashboard():
         total_courses=total_courses,
         total_posts=total_posts,
         total_contacts=total_contacts,
+        pending_registrations=pending_registrations,
+        pending_users=pending_users,
         recent_users=recent_users,
         recent_results=recent_results,
         daily_active=daily_active,
@@ -1816,6 +2249,30 @@ def admin_change_role(user_id):
         db.session.commit()
         flash(f"Role updated to {new_role} for {user.name}.", "success")
     return redirect("/admin/users")
+
+
+@app.route("/admin/user/<int:user_id>/approve", methods=["POST"])
+@login_required
+@admin_required
+def admin_approve_user(user_id):
+    user = User.query.get_or_404(user_id)
+    user.status = 'approved'
+    db.session.commit()
+    logging.info(f"Admin approved user: {user.email}")
+    flash(f"{user.name} has been approved.", "success")
+    return redirect("/admin")
+
+
+@app.route("/admin/user/<int:user_id>/reject", methods=["POST"])
+@login_required
+@admin_required
+def admin_reject_user(user_id):
+    user = User.query.get_or_404(user_id)
+    user.status = 'rejected'
+    db.session.commit()
+    logging.info(f"Admin rejected user: {user.email}")
+    flash(f"{user.name} has been rejected.", "success")
+    return redirect("/admin")
 
 
 @app.route("/admin/message/<int:msg_id>/read", methods=["POST"])
@@ -2234,6 +2691,12 @@ with app.app_context():
             conn.commit()
         logging.info("Migrated: added plain_password column to user table")
 
+    if 'status' not in existing_columns:
+        with db.engine.connect() as conn:
+            conn.execute(text("ALTER TABLE \"user\" ADD COLUMN status VARCHAR(20) DEFAULT 'approved'"))
+            conn.commit()
+        logging.info("Migrated: added status column to user table")
+
     existing_flashcard_cols = {col['name'] for col in inspector.get_columns('flashcard')}
     for col_name, col_def in [
         ('easiness_factor', 'FLOAT DEFAULT 2.5'),
@@ -2246,20 +2709,7 @@ with app.app_context():
                 conn.commit()
             logging.info(f"Migrated: added {col_name} column to flashcard table")
 
-    # Create default admin if not exists
-    admin = User.query.filter_by(email="admin@eduvoxus.com").first()
-    if not admin:
-        admin = User(
-            name="Admin",
-            email="admin@eduvoxus.com",
-            password=generate_password_hash("admin123"),
-            plain_password="admin123",
-            role="admin",
-            points=0,
-            streak=0
-        )
-        db.session.add(admin)
-        db.session.commit()
+    # Admin is now created via /setup-admin on first visit
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5009))
