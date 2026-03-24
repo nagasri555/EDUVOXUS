@@ -11,3 +11,11 @@ uploads/certificates/*
 *.pyc
 .DS_Store
 EduVoxus_Project_Report.pdf
+EduVoxus_Paper_Publication.pdf
+EduVoxus_Final_Project_Document.pdf
+screenshots/
+capture_screenshots.py
+crop_screenshots.py
+generate_report.py
+generate_paper.py
+generate_project_doc.py
